@@ -34,7 +34,7 @@
 
 **任务详情**：
 - [Task 2.1: rmcp 协议集成](task2-1-rmcp-integration.md) ✅ 2026-05-03
-- [Task 2.2: 配置系统完善](task2-2-config-improvements.md) 🟡
+- [Task 2.2: 配置系统完善](task2-2-config-improvements.md) ✅ 2026-05-03
 - [Task 2.3: 端到端测试](task2-3-e2e-testing.md) 🟡
 
 **产出**：功能完整的 MCP 服务器（标准协议）
@@ -100,7 +100,7 @@
 
 ## 当前焦点
 
-**Phase 2 的剩余任务**：Task 2.2 配置验证 + Task 2.3 端到端测试
+**当前焦点**：Task 2.3 端到端测试（需要 LightRAG 环境）
 
 ---
 

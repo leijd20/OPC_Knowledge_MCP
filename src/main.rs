@@ -23,7 +23,13 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     let config = config::Config::load()?;
 
-    tracing::info!("Starting pangenMCP server on {}:{}", config.server.host, config.server.port);
+    tracing::info!(
+        "Starting {} v{} on {}:{}",
+        config.mcp.server_name,
+        config.mcp.version,
+        config.server.host,
+        config.server.port
+    );
     tracing::info!("LightRAG URL: {}", config.lightrag.url);
 
     // 启动 HTTP 服务器
