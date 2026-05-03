@@ -33,7 +33,7 @@
 - [ ] 端到端测试
 
 **任务详情**：
-- [Task 2.1: rmcp 协议集成](task2-1-rmcp-integration.md) 🔴
+- [Task 2.1: rmcp 协议集成](task2-1-rmcp-integration.md) ✅ 2026-05-03
 - [Task 2.2: 配置系统完善](task2-2-config-improvements.md) 🟡
 - [Task 2.3: 端到端测试](task2-3-e2e-testing.md) 🟡
 
@@ -91,7 +91,7 @@
 | 版本 | 目标 | 状态 | 预计时间 |
 |------|------|------|---------|
 | v0.1.0 | 基础功能（当前） | ⚠️ 进行中 | 2026-05 |
-| v0.2.0 | rmcp 集成完成 | ⬜ 计划中 | 待定 |
+| v0.2.0 | rmcp 集成完成 | ✅ 已完成 | 2026-05-03 |
 | v0.3.0 | 测试覆盖完善 | ⬜ 计划中 | 待定 |
 | v0.5.0 | 功能完整 | ⬜ 计划中 | 待定 |
 | v1.0.0 | 生产就绪 | ⬜ 计划中 | 待定 |
@@ -100,20 +100,19 @@
 
 ## 当前焦点
 
-**Phase 2 的关键任务**：集成 rmcp Streamable HTTP 协议
-
-这是当前的主要阻塞项，完成后即可进入 Phase 3。
+**Phase 2 的剩余任务**：Task 2.2 配置验证 + Task 2.3 端到端测试
 
 ---
 
 ## 具体任务
 
-具体的任务分解和实现细节将在各个 Phase 的子任务文件中详细说明。
-
 - Phase 1 任务：已完成，无需文档
-- Phase 2 任务：`tasks/phase2/` （待创建）
-- Phase 3 任务：`tasks/phase3/` （待创建）
-- ...
+- Phase 2 任务：见下方文件
+  - [task2-1-rmcp-integration.md](task2-1-rmcp-integration.md) ✅
+  - [task2-2-config-improvements.md](task2-2-config-improvements.md)
+  - [task2-3-e2e-testing.md](task2-3-e2e-testing.md)
+- Phase 3 任务：待规划
+- Phase 4/5 任务：待规划
 
 ---
 
