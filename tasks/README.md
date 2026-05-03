@@ -32,6 +32,11 @@
 - [ ] **MCP 协议集成（rmcp）** ← 当前阻塞项
 - [ ] 端到端测试
 
+**任务详情**：
+- [Task 2.1: rmcp 协议集成](task2-1-rmcp-integration.md) 🔴
+- [Task 2.2: 配置系统完善](task2-2-config-improvements.md) 🟡
+- [Task 2.3: 端到端测试](task2-3-e2e-testing.md) 🟡
+
 **产出**：功能完整的 MCP 服务器（标准协议）
 
 ---
