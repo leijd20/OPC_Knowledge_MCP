@@ -1,11 +1,9 @@
-use crate::auth::UserContext;
 use crate::error::AppError;
 use crate::http::AppState;
 use axum::{
     extract::{Request, State},
-    http::StatusCode,
     middleware::Next,
-    response::{IntoResponse, Response},
+    response::Response,
 };
 use std::sync::Arc;
 
@@ -35,15 +33,3 @@ pub async fn auth_middleware(
     Ok(next.run(request).await)
 }
 
-// 错误响应
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        let (status, message) = match &self {
-            AppError::Auth(_) => (StatusCode::UNAUTHORIZED, self.to_string()),
-            AppError::LightRag(_) => (StatusCode::BAD_GATEWAY, self.to_string()),
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
-        };
-
-        (status, message).into_response()
-    }
-}

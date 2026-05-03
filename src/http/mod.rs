@@ -6,11 +6,10 @@ use crate::error::AppError;
 use crate::mcp::{McpServer, ToolRequest};
 use axum::{
     extract::{Request, State},
-    http::StatusCode,
     middleware as axum_middleware,
-    response::{IntoResponse, Response},
+    response::Json,
     routing::post,
-    Json, Router,
+    Router,
 };
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
