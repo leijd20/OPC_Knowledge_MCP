@@ -25,7 +25,7 @@ pub async fn auth_middleware(
         .ok_or_else(|| AppError::Auth("Invalid Authorization header format".to_string()))?;
 
     // 验证 token
-    let user = state.mcp_server.validate_token(token)?;
+    let user = state.token_validator.validate(token)?;
 
     // 将用户上下文存入 request extensions
     request.extensions_mut().insert(user);
