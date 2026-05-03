@@ -256,6 +256,14 @@ curl http://localhost:9621/health
 
 审计日志位置：`./logs/audit.log`
 
+## 文档
+
+- [快速开始](#快速开始) - 本文档
+- [架构设计](docs/DESIGN.md) - 详细的系统设计
+- [开发状态](docs/STATUS.md) - 实现状态和待办事项
+- [开发计划](tasks/README.md) - 任务列表和里程碑
+- [AI 协作规范](docs/CLAUDE.md) - 开发规范
+
 ## 许可证
 
 MIT
@@ -263,6 +271,8 @@ MIT
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+查看 [开发计划](tasks/README.md) 了解当前的任务和优先级。
 
 ## 相关链接
 
