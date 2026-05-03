@@ -1,0 +1,71 @@
+# MCP 服务器配置示例
+# 复制此文件为 config.toml 并修改相应配置
+
+[server]
+# MCP 服务器监听地址和端口
+host = "0.0.0.0"
+port = 8080
+
+[mcp]
+# MCP 服务器信息
+server_name = "rag-mcp-server"
+version = "0.1.0"
+
+# ============================================
+# Bearer Token 认证配置
+# ============================================
+# 每个用户分配一个 token 和对应的权限 scope
+# Token 建议从环境变量读取，避免硬编码
+
+[[auth.tokens]]
+name = "Alice (只读用户)"
+token = "${USER_ALICE_TOKEN}"
+scopes = ["rag:read"]
+
+[[auth.tokens]]
+name = "Bob (读写用户)"
+token = "${USER_BOB_TOKEN}"
+scopes = ["rag:read", "rag:write"]
+
+[[auth.tokens]]
+name = "Admin (管理员)"
+token = "${ADMIN_TOKEN}"
+scopes = ["rag:read", "rag:write", "rag:admin"]
+
+[auth]
+# 审计日志路径
+audit_log_path = "./logs/audit.log"
+
+# ============================================
+# LightRAG 服务器配置
+# ============================================
+[lightrag]
+# LightRAG 服务器地址（必需）
+# 示例：
+#   - 本地部署：http://localhost:9621
+#   - 远程部署：http://192.168.1.100:9621
+url = "http://localhost:9621"
+
+# HTTP 请求超时时间（秒）
+timeout_seconds = 30
+
+# 失败重试次数
+max_retries = 3
+
+# 重试间隔（秒）
+retry_delay_seconds = 1
+
+# ============================================
+# 查询默认参数
+# ============================================
+[defaults]
+# 默认查询模式
+# 可选值：naive, local, global, hybrid
+# 推荐：hybrid（结合局部和全局检索）
+query_mode = "hybrid"
+
+# 默认返回结果数量
+top_k = 60
+
+# 默认响应类型
+response_type = "Multiple Paragraphs"
