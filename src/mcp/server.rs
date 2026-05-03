@@ -230,3 +230,203 @@ impl ServerHandler for McpServer {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{AuthConfig, LightRagConfig, TokenConfig};
+
+    fn create_test_shared_state() -> Arc<SharedState> {
+        let config = Config {
+            server: crate::config::ServerConfig {
+                host: "127.0.0.1".to_string(),
+                port: 8080,
+            },
+            auth: AuthConfig {
+                tokens: vec![
+                    TokenConfig {
+                        name: "admin".to_string(),
+                        token: "admin-token".to_string(),
+                        scopes: vec!["rag:read".to_string(), "rag:write".to_string(), "rag:admin".to_string()],
+                    },
+                    TokenConfig {
+                        name: "reader".to_string(),
+                        token: "reader-token".to_string(),
+                        scopes: vec!["rag:read".to_string()],
+                    },
+                ],
+                audit_log_path: "test_audit.log".to_string(),
+            },
+            lightrag: LightRagConfig {
+                url: "http://localhost:9621".to_string(),
+                timeout_seconds: 30,
+                max_retries: 3,
+                retry_delay_seconds: 1,
+            },
+            defaults: DefaultsConfig {
+                query_mode: "hybrid".to_string(),
+                top_k: 10,
+                response_type: "Multiple Paragraphs".to_string(),
+            },
+            mcp: crate::config::McpConfig {
+                server_name: "test-server".to_string(),
+                version: "0.1.0".to_string(),
+            },
+        };
+
+        Arc::new(SharedState::new(&config))
+    }
+
+    fn create_test_user(name: &str, scopes: Vec<&str>) -> UserContext {
+        UserContext {
+            name: name.to_string(),
+            scopes: scopes.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    fn create_test_parts() -> http::request::Parts {
+        let request = http::Request::builder()
+            .uri("/")
+            .body(())
+            .unwrap();
+        let (parts, _) = request.into_parts();
+        parts
+    }
+
+    // 测试 get_user_from_parts()
+    #[test]
+    fn test_get_user_from_parts_success() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user = create_test_user("test-user", vec!["rag:read"]);
+        let mut parts = create_test_parts();
+        parts.extensions.insert(user.clone());
+
+        let result = server.get_user_from_parts(&parts);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().name, "test-user");
+    }
+
+    #[test]
+    fn test_get_user_from_parts_missing_returns_error() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let parts = create_test_parts();
+
+        let result = server.get_user_from_parts(&parts);
+        assert!(result.is_err());
+    }
+
+    // 测试 check_scope()
+    #[test]
+    fn test_check_scope_with_permission_returns_ok() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user = create_test_user("admin", vec!["rag:read", "rag:write"]);
+
+        assert!(server.check_scope(&user, "rag:read").is_ok());
+        assert!(server.check_scope(&user, "rag:write").is_ok());
+    }
+
+    #[test]
+    fn test_check_scope_without_permission_returns_error() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user = create_test_user("reader", vec!["rag:read"]);
+
+        let result = server.check_scope(&user, "rag:write");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_check_scope_error_contains_required_scope() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user = create_test_user("reader", vec!["rag:read"]);
+
+        let result = server.check_scope(&user, "rag:admin");
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.message.to_string().contains("rag:admin"));
+    }
+
+    // 测试各工具的权限要求
+    #[test]
+    fn test_rag_query_requires_rag_read() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user_with = create_test_user("user", vec!["rag:read"]);
+        let user_without = create_test_user("user", vec!["rag:write"]);
+
+        assert!(server.check_scope(&user_with, "rag:read").is_ok());
+        assert!(server.check_scope(&user_without, "rag:read").is_err());
+    }
+
+    #[test]
+    fn test_rag_insert_requires_rag_write() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user_with = create_test_user("user", vec!["rag:write"]);
+        let user_without = create_test_user("user", vec!["rag:read"]);
+
+        assert!(server.check_scope(&user_with, "rag:write").is_ok());
+        assert!(server.check_scope(&user_without, "rag:write").is_err());
+    }
+
+    #[test]
+    fn test_rag_clear_requires_rag_write() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user_with = create_test_user("user", vec!["rag:write"]);
+        let user_without = create_test_user("user", vec!["rag:read"]);
+
+        assert!(server.check_scope(&user_with, "rag:write").is_ok());
+        assert!(server.check_scope(&user_without, "rag:write").is_err());
+    }
+
+    #[test]
+    fn test_rag_health_requires_rag_admin() {
+        let state = create_test_shared_state();
+        let server = McpServer::new(state);
+
+        let user_with = create_test_user("admin", vec!["rag:admin"]);
+        let user_without = create_test_user("user", vec!["rag:read", "rag:write"]);
+
+        assert!(server.check_scope(&user_with, "rag:admin").is_ok());
+        assert!(server.check_scope(&user_without, "rag:admin").is_err());
+    }
+
+    // 测试参数默认值
+    #[test]
+    fn test_query_params_default_mode() {
+        let state = create_test_shared_state();
+        assert_eq!(state.defaults.query_mode, "hybrid");
+    }
+
+    #[test]
+    fn test_query_params_default_top_k() {
+        let state = create_test_shared_state();
+        assert_eq!(state.defaults.top_k, 10);
+    }
+
+    #[test]
+    fn test_query_params_default_response_type() {
+        let state = create_test_shared_state();
+        assert_eq!(state.defaults.response_type, "Multiple Paragraphs");
+    }
+
+    #[test]
+    fn test_shared_state_creation() {
+        let state = create_test_shared_state();
+
+        assert_eq!(state.mcp_config.server_name, "test-server");
+        assert_eq!(state.mcp_config.version, "0.1.0");
+    }
+}

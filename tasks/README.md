@@ -52,7 +52,7 @@
 - [ ] 测试覆盖率 > 85%
 
 **任务详情**：
-- [Task 3.1: 单元测试补充](task3-1-unit-tests.md) ⬜
+- [Task 3.1: 单元测试补充](task3-1-unit-tests.md) ✅ 2026-05-03
 - [Task 3.2: 集成测试](task3-2-integration-tests.md) ⬜
 - [Task 3.3: 端到端测试重新定位](task3-3-e2e-reposition.md) ⬜
 
@@ -118,7 +118,7 @@
   - [task2-2-config-improvements.md](task2-2-config-improvements.md) ✅
   - [task2-3-e2e-testing.md](task2-3-e2e-testing.md) ✅
 - Phase 3 任务：⬜ 待开始
-  - [task3-1-unit-tests.md](task3-1-unit-tests.md) ⬜
+  - [task3-1-unit-tests.md](task3-1-unit-tests.md) ✅
   - [task3-2-integration-tests.md](task3-2-integration-tests.md) ⬜
   - [task3-3-e2e-reposition.md](task3-3-e2e-reposition.md) ⬜
 - Phase 4/5 任务：待规划
