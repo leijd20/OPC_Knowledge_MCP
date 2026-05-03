@@ -195,8 +195,30 @@ src/
 
 ### 运行测试
 
+单元测试：
+
 ```bash
 cargo test
+```
+
+端到端测试（需要 LightRAG 服务运行）：
+
+```bash
+# 设置测试用 token
+export ALICE_TOKEN=your_alice_token
+export BOB_TOKEN=your_bob_token
+export ADMIN_TOKEN=your_admin_token
+
+# 启动服务器
+cargo run &
+
+# 运行所有测试
+bash scripts/test_all.sh
+
+# 或单独运行
+bash scripts/test_functions.sh    # 功能测试
+bash scripts/test_permissions.sh  # 权限测试
+bash scripts/test_errors.sh       # 错误处理测试
 ```
 
 ### 代码格式化

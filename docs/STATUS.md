@@ -7,7 +7,7 @@
 - ✅ 项目骨架搭建完成
 - ✅ 核心业务逻辑实现
 - ✅ MCP 协议集成（rmcp v1.6.0 + Streamable HTTP）
-- ⬜ 端到端测试（需要 LightRAG 环境）
+- ✅ 端到端测试脚本（需要 LightRAG 环境运行）
 
 ## 模块状态
 
@@ -77,8 +77,11 @@
 | 测试类型 | 状态 | 说明 |
 |---------|------|------|
 | 单元测试 | ⬜ | 未编写 |
-| 端到端测试 | ⬜ | 需要 LightRAG 环境（Task 2.3）|
-| MCP 协议测试脚本 | ✅ | scripts/test_mcp.sh |
+| 端到端测试脚本 | ✅ | scripts/test_*.sh（需要 LightRAG 环境运行）|
+| MCP 协议测试 | ✅ | scripts/test_mcp.sh |
+| 功能测试 | ✅ | scripts/test_functions.sh |
+| 权限测试 | ✅ | scripts/test_permissions.sh |
+| 错误处理测试 | ✅ | scripts/test_errors.sh |
 
 ## 依赖版本
 
@@ -95,9 +98,11 @@
 
 ### 当前优先级 🟡
 
-1. **Task 2.2：配置系统完善** — 添加启动时配置验证
-2. **Task 2.3：端到端测试** — 连接 LightRAG 验证完整流程
+1. **Phase 3：生产就绪** — 参见 tasks/README.md
+   - Task 3.1：单元测试和集成测试
+   - Task 3.2：Docker 容器化
+   - Task 3.3：性能优化
 
 ---
 
-**项目可用性**：✅ 已是符合标准的 MCP 服务器，支持 tools/list 和 tools/call。待端到端测试验证。
+**项目可用性**：✅ 已是符合标准的 MCP 服务器，支持 tools/list 和 tools/call。Phase 2 完成，待 LightRAG 环境验证端到端测试。
