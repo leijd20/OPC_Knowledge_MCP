@@ -50,19 +50,25 @@ http/
 ## 路由
 
 ```
-POST /mcp   →  rmcp StreamableHttpService（标准 MCP 协议）
+POST /mcp   →  rmcp StreamableHttpService（标准 MCP 协议，需 Bearer 认证）
               ├── initialize
               ├── tools/list
               └── tools/call
+
+其他路径    →  404 Not Found（不经过认证中间件）
 ```
+
+> 认证中间件通过 `route_layer` 仅挂在 `/mcp` 上。`/.well-known/*`、`/register`
+> 等 OAuth 探测路径返回 404，让 MCP 客户端跳过 OAuth 协商，直接使用静态 Bearer。
 
 ## 错误响应
 
-| 状态码 | 场景 |
-|-------|------|
-| `401 Unauthorized` | Token 缺失、格式错误或无效 |
-| `400 Bad Request`  | 请求体不符合 MCP JSON-RPC 格式 |
-| `500 Internal Server Error` | 其他内部错误（含 LightRAG 通信失败） |
+| 状态码 | 场景 | 备注 |
+|-------|------|------|
+| `401 Unauthorized` | Token 缺失、格式错误或无效 | 响应头含 `WWW-Authenticate: Bearer realm="pangenmcp"`（RFC 6750） |
+| `400 Bad Request`  | 请求体不符合 MCP JSON-RPC 格式 | |
+| `404 Not Found` | 路径未注册（如 OAuth 元数据探测） | |
+| `500 Internal Server Error` | 其他内部错误（含 LightRAG 通信失败） | |
 
 > 权限不足通过 MCP JSON-RPC `error` 响应返回（不是 HTTP 状态码）。
 
@@ -86,7 +92,7 @@ port = 8080
 ## 测试
 
 - 单元测试：`middleware.rs` 内 7 个测试，覆盖 header 提取、token 验证逻辑
-- 集成测试：[../../tests/integration_test.rs](../../tests/integration_test.rs) 中的 HTTP 认证 5 个场景（基于真实 axum Router）
+- 集成测试：[../../tests/integration_test.rs](../../tests/integration_test.rs) 中的 HTTP 认证 7 个场景（基于真实 axum Router），含 `WWW-Authenticate` 头校验和 404 行为
 
 ## 待改进
 

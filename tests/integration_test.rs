@@ -95,6 +95,43 @@ async fn test_http_no_token_returns_unauthorized() {
     let response = app.oneshot(request).await.unwrap();
     // AppError::Auth maps to UNAUTHORIZED
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    // RFC 6750: 应当包含 WWW-Authenticate: Bearer，明确告知客户端使用静态 Bearer
+    let www_auth = response.headers().get(header::WWW_AUTHENTICATE);
+    assert!(www_auth.is_some());
+    assert!(www_auth.unwrap().to_str().unwrap().starts_with("Bearer"));
+}
+
+#[tokio::test]
+async fn test_non_mcp_path_returns_not_found_without_auth() {
+    // /.well-known/* 等非 /mcp 路径不应当被认证中间件拦截，
+    // 应直接返回 404，避免触发 MCP 客户端的 OAuth 自动协商。
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/.well-known/oauth-protected-resource")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_register_endpoint_returns_not_found() {
+    // OAuth 动态注册端点不存在，应返回 404 而非 401
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/register")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

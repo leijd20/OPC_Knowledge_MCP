@@ -78,7 +78,7 @@
 | 测试类型 | 状态 | 说明 |
 |---------|------|------|
 | 单元测试 | ✅ | 64 个测试，覆盖 config/auth/rag/mcp/middleware 模块 |
-| 集成测试 | ✅ | 22 个测试：HTTP 认证 (5) + RAG mock (5) + 权限矩阵 (12) |
+| 集成测试 | ✅ | 24 个测试：HTTP 认证 (7) + RAG mock (5) + 权限矩阵 (12) |
 | 端到端测试脚本 | ✅ | scripts/test_*.sh（需要 LightRAG 环境运行）|
 | MCP 协议测试 | ✅ | scripts/test_mcp.sh |
 | 功能测试 | ✅ | scripts/test_functions.sh |

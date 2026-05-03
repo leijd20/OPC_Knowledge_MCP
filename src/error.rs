@@ -36,12 +36,23 @@ impl From<reqwest::Error> for AppError {
 // Axum 错误响应
 impl axum::response::IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
-        let (status, message) = match self {
-            AppError::Auth(_) => (axum::http::StatusCode::UNAUTHORIZED, self.to_string()),
-            AppError::LightRag(_) => (axum::http::StatusCode::BAD_GATEWAY, self.to_string()),
-            _ => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
-        };
+        use axum::http::{header, HeaderValue, StatusCode};
 
-        (status, message).into_response()
+        match self {
+            AppError::Auth(_) => {
+                let body = self.to_string();
+                let mut response = (StatusCode::UNAUTHORIZED, body).into_response();
+                // RFC 6750: 明确告知客户端使用静态 Bearer Token，避免触发 OAuth 自动协商
+                response.headers_mut().insert(
+                    header::WWW_AUTHENTICATE,
+                    HeaderValue::from_static("Bearer realm=\"pangenmcp\""),
+                );
+                response
+            }
+            AppError::LightRag(_) => {
+                (StatusCode::BAD_GATEWAY, self.to_string()).into_response()
+            }
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response(),
+        }
     }
 }

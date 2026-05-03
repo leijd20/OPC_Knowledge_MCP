@@ -28,12 +28,18 @@ pub fn build_app(config: &Config) -> Router {
         )
     };
 
-    Router::new()
+    // 仅 /mcp 路径需要 Bearer 认证；其他路径（如 /.well-known/*）自然 404，
+    // 避免 MCP 客户端误以为支持 OAuth 而进入 OAuth 协商流程。
+    // 使用 route_layer 而非 layer，以确保中间件只作用于已注册路由，未匹配路径直接 404。
+    let mcp_router = Router::new()
         .nest_service("/mcp", mcp_service)
-        .layer(axum_middleware::from_fn_with_state(
+        .route_layer(axum_middleware::from_fn_with_state(
             app_state.clone(),
             middleware::auth_middleware,
-        ))
+        ));
+
+    Router::new()
+        .merge(mcp_router)
         .layer(TraceLayer::new_for_http())
 }
 
