@@ -46,13 +46,17 @@
 **时间**：待定  
 **状态**：⬜ 未开始
 
-- [ ] 单元测试覆盖
-- [ ] 集成测试
-- [ ] 与 LightRAG 联调
-- [ ] 性能测试
-- [ ] 安全审计
+- [ ] 单元测试补充（清除技术债务）
+- [ ] 集成测试（mock LightRAG）
+- [ ] 端到端测试重新定位
+- [ ] 测试覆盖率 > 85%
 
-**产出**：经过充分测试的稳定版本
+**任务详情**：
+- [Task 3.1: 单元测试补充](task3-1-unit-tests.md) ⬜
+- [Task 3.2: 集成测试](task3-2-integration-tests.md) ⬜
+- [Task 3.3: 端到端测试重新定位](task3-3-e2e-reposition.md) ⬜
+
+**产出**：经过充分测试的稳定版本，建立正确的测试金字塔
 
 ---
 
@@ -100,7 +104,9 @@
 
 ## 当前焦点
 
-**当前焦点**：Phase 2 已完成，进入 Phase 3（生产就绪）
+**当前焦点**：Phase 3 - 测试补充（Task 3.1 单元测试优先）
+
+**技术债务**：Phase 2 开发时违反 TDD 原则，561 行核心代码完全没有单元测试。Phase 3 首要任务是补充单元测试，建立正确的测试金字塔。
 
 ---
 
@@ -111,7 +117,10 @@
   - [task2-1-rmcp-integration.md](task2-1-rmcp-integration.md) ✅
   - [task2-2-config-improvements.md](task2-2-config-improvements.md) ✅
   - [task2-3-e2e-testing.md](task2-3-e2e-testing.md) ✅
-- Phase 3 任务：待规划
+- Phase 3 任务：⬜ 待开始
+  - [task3-1-unit-tests.md](task3-1-unit-tests.md) ⬜
+  - [task3-2-integration-tests.md](task3-2-integration-tests.md) ⬜
+  - [task3-3-e2e-reposition.md](task3-3-e2e-reposition.md) ⬜
 - Phase 4/5 任务：待规划
 
 ---
