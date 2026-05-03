@@ -107,6 +107,7 @@ impl McpServer {
                 .response_type
                 .unwrap_or_else(|| self.state.defaults.response_type.clone()),
         };
+        let mode_used = request.mode.clone();
 
         let response = self
             .state
@@ -124,7 +125,7 @@ impl McpServer {
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Mode: {}\n\n{}",
-            response.mode, response.response
+            mode_used, response.response
         ))]))
     }
 
@@ -214,7 +215,10 @@ impl McpServer {
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Status: {}\nWorking Dir: {}\nLLM Model: {}\nEmbedding Model: {}",
-            response.status, response.working_dir, response.llm_model, response.embedding_model
+            response.status,
+            response.working_directory,
+            response.configuration.llm_model,
+            response.configuration.embedding_model
         ))]))
     }
 }

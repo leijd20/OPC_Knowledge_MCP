@@ -36,10 +36,10 @@ rag/
 - `InsertRequest` - 插入请求
 
 **响应类型**：
-- `QueryResponse` - 查询响应
+- `QueryResponse` - 查询响应（仅 `response` 字段；`mode` 由调用方记录）
 - `InsertResponse` - 插入响应
 - `DeleteResponse` - 删除响应
-- `HealthResponse` - 健康检查响应
+- `HealthResponse` - 健康检查响应（含嵌套 `configuration`，与 LightRAG /health wire format 一致）
 
 ## 实现状态
 

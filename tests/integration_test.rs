@@ -215,7 +215,7 @@ async fn test_rag_client_query_full_flow() {
         .match_header("content-type", "application/json")
         .with_status(200)
         .with_header("content-type", "application/json")
-        .with_body(r#"{"response":"integration test result","mode":"hybrid"}"#)
+        .with_body(r#"{"response":"integration test result"}"#)
         .create_async()
         .await;
 
@@ -287,7 +287,7 @@ async fn test_rag_client_health_full_flow() {
         .with_status(200)
         .with_header("content-type", "application/json")
         .with_body(
-            r#"{"status":"healthy","working_dir":"/data","llm_model":"gpt-4","embedding_model":"text-embedding-3"}"#,
+            r#"{"status":"healthy","working_directory":"/data","configuration":{"llm_model":"gpt-4","embedding_model":"text-embedding-3"}}"#,
         )
         .create_async()
         .await;
@@ -299,7 +299,7 @@ async fn test_rag_client_health_full_flow() {
     assert!(result.is_ok());
     let response = result.unwrap();
     assert_eq!(response.status, "healthy");
-    assert_eq!(response.llm_model, "gpt-4");
+    assert_eq!(response.configuration.llm_model, "gpt-4");
 }
 
 #[tokio::test]

@@ -147,7 +147,19 @@ scopes = ["rag:read", "rag:write", "rag:admin"]  # 所有权限
 
 ### 使用 Claude Code
 
-在 Claude Code 中配置 MCP 服务器：
+使用命令进行配置
+```
+claude mcp add --transport http \
+  ragMCP http://127.0.0.1:8080/mcp \
+  --header "Authorization: Bearer <token>"
+
+#例如
+claude mcp add --transport http \
+  ragMCP http://127.0.0.1:8080/mcp \
+  --header "Authorization": "Bearer MJxfiqTDt58VjhP3v2wJMGPDPENFR2k4"
+```
+
+或在 Claude Code 中配置 MCP 服务器：
 
 ```json
 {

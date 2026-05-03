@@ -218,7 +218,7 @@ mod tests {
             .mock("POST", "/query")
             .with_status(200)
             .with_header("content-type", "application/json")
-            .with_body(r#"{"response":"test response","mode":"hybrid"}"#)
+            .with_body(r#"{"response":"test response"}"#)
             .expect(1)
             .create_async()
             .await;
@@ -237,7 +237,6 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.response, "test response");
-        assert_eq!(response.mode, "hybrid");
     }
 
     #[tokio::test]
@@ -248,7 +247,7 @@ mod tests {
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(
-                r#"{"status":"healthy","working_dir":"/data","llm_model":"gpt-4","embedding_model":"text-embedding-3"}"#,
+                r#"{"status":"healthy","working_directory":"/data","configuration":{"llm_model":"gpt-4","embedding_model":"text-embedding-3"}}"#,
             )
             .create_async()
             .await;
@@ -260,7 +259,7 @@ mod tests {
         assert!(result.is_ok());
         let response = result.unwrap();
         assert_eq!(response.status, "healthy");
-        assert_eq!(response.llm_model, "gpt-4");
+        assert_eq!(response.configuration.llm_model, "gpt-4");
     }
 
     #[tokio::test]
