@@ -76,7 +76,7 @@ impl McpServer {
             .ok_or_else(|| ErrorData::internal_error("Missing authentication context", None))
     }
 
-    fn check_scope(&self, user: &UserContext, scope: &str) -> Result<(), ErrorData> {
+    pub fn check_scope(&self, user: &UserContext, scope: &str) -> Result<(), ErrorData> {
         if self.state.token_validator.has_scope(user, scope) {
             Ok(())
         } else {

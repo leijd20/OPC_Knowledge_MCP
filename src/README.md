@@ -8,7 +8,8 @@
 
 | 文件 | 说明 |
 |------|------|
-| `main.rs` | 程序入口，初始化日志和配置，启动服务器 |
+| `main.rs` | 二进制入口，初始化日志和配置，启动服务器 |
+| `lib.rs` | 库入口，导出公共模块供集成测试使用 |
 | `config.rs` | 配置结构体定义和加载逻辑 |
 | `error.rs` | 全局错误类型 |
 
@@ -49,8 +50,9 @@ Config
 - [x] 配置文件加载
 - [x] 环境变量展开（`${VAR_NAME}`）
 - [x] 统一错误类型
-- [ ] `McpConfig`（server_name, version）暂未使用
-- [ ] `DefaultsConfig` 暂未接入工具处理
+- [x] `McpConfig`（server_name, version）已接入 rmcp ServerInfo
+- [x] `DefaultsConfig` 已接入 MCP 工具参数默认值
+- [x] lib + bin 双结构（支持集成测试）
 
 ## 启动流程
 
@@ -76,3 +78,9 @@ main()
 - [rag/README.md](rag/README.md) - LightRAG 客户端
 - [mcp/README.md](mcp/README.md) - MCP 工具
 - [http/README.md](http/README.md) - HTTP 服务器
+
+## 测试
+
+- 单元测试：各模块的 `#[cfg(test)]` 子模块（共 64 个）
+- 集成测试：[../tests/integration_test.rs](../tests/integration_test.rs)（共 22 个）
+- E2E 脚本：[../scripts/](../scripts/)（需要 LightRAG 运行）

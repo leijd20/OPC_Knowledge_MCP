@@ -115,6 +115,11 @@ retry_delay_seconds = 1
 - **4xx 错误**：直接返回给用户
 - **5xx 错误**：重试后返回
 
+## 测试
+
+- 单元测试：`client.rs` 内 13 个测试，包括 URL 构建、请求序列化、mockito 重试模拟
+- 集成测试：5 个 mock LightRAG 场景（query / insert / clear / health / 不可达），见 `tests/integration_test.rs`
+
 ## 待改进
 
 - [ ] 支持流式查询（`POST /query/stream`）

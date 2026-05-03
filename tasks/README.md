@@ -53,7 +53,7 @@
 
 **任务详情**：
 - [Task 3.1: 单元测试补充](task3-1-unit-tests.md) ✅ 2026-05-03
-- [Task 3.2: 集成测试](task3-2-integration-tests.md) ⬜
+- [Task 3.2: 集成测试](task3-2-integration-tests.md) ✅ 2026-05-03 ⬜
 - [Task 3.3: 端到端测试重新定位](task3-3-e2e-reposition.md) ⬜
 
 **产出**：经过充分测试的稳定版本，建立正确的测试金字塔

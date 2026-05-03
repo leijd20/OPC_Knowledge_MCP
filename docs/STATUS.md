@@ -7,6 +7,7 @@
 - ✅ 项目骨架搭建完成
 - ✅ 核心业务逻辑实现
 - ✅ MCP 协议集成（rmcp v1.6.0 + Streamable HTTP）
+- ✅ 单元测试 64 个 + 集成测试 22 个
 - ✅ 端到端测试脚本（需要 LightRAG 环境运行）
 
 ## 模块状态
@@ -77,6 +78,7 @@
 | 测试类型 | 状态 | 说明 |
 |---------|------|------|
 | 单元测试 | ✅ | 64 个测试，覆盖 config/auth/rag/mcp/middleware 模块 |
+| 集成测试 | ✅ | 22 个测试：HTTP 认证 (5) + RAG mock (5) + 权限矩阵 (12) |
 | 端到端测试脚本 | ✅ | scripts/test_*.sh（需要 LightRAG 环境运行）|
 | MCP 协议测试 | ✅ | scripts/test_mcp.sh |
 | 功能测试 | ✅ | scripts/test_functions.sh |
@@ -96,13 +98,14 @@
 
 ## 下一步工作
 
-### 当前优先级 🟡
+### 待完成任务
 
-1. **Phase 3：生产就绪** — 参见 tasks/README.md
-   - Task 3.1：单元测试和集成测试
-   - Task 3.2：Docker 容器化
-   - Task 3.3：性能优化
+参见 [tasks/README.md](../tasks/README.md)：
+
+- **Task 3.3**：E2E 测试脚本重新定位（梳理 shell 脚本的覆盖角色）
+- **未来工作**：Token 过期机制、CORS 配置、日志轮转、Docker 容器化等
 
 ---
 
-**项目可用性**：✅ 已是符合标准的 MCP 服务器，支持 tools/list 和 tools/call。Phase 2 完成，待 LightRAG 环境验证端到端测试。
+**项目可用性**：✅ 符合标准的 MCP 服务器，支持 tools/list 和 tools/call。
+**测试覆盖**：单元测试 64 个 + 集成测试 22 个全部通过；E2E 脚本待 LightRAG 环境验证。

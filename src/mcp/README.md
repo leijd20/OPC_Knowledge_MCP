@@ -2,29 +2,33 @@
 
 ## 概述
 
-MCP 服务器核心逻辑，实现 MCP 工具定义和调用处理。
+MCP 服务器核心逻辑，实现 MCP 工具定义和调用处理。基于 [rmcp](https://crates.io/crates/rmcp) v1.6 提供标准 MCP Streamable HTTP 协议。
 
 ## 模块结构
 
 ```
 mcp/
 ├── mod.rs       # 模块导出
-├── server.rs    # MCP 服务器上下文和辅助方法
-└── tools.rs     # 工具定义、参数类型和处理逻辑
+└── server.rs    # MCP 服务器、工具定义、参数类型和处理逻辑
 ```
 
 ## 功能
 
 ### MCP 服务器 (`server.rs`)
 
-**McpServer**
-- 持有各模块的引用（RAG 客户端、Token 验证器）
-- 提供 `validate_token()` 和 `check_scope()` 辅助方法
-- 当前：暴露原始工具处理逻辑（未集成 rmcp，见下方说明）
+**SharedState**（跨 session 共享）
+- `rag_client` - LightRAG HTTP 客户端
+- `token_validator` - Token 验证器
+- `audit_logger` - 审计日志器
+- `defaults` - 工具参数默认值
+- `mcp_config` - MCP 服务器元信息
 
-### 工具定义 (`tools.rs`)
+**McpServer**（每个 session 一个实例）
+- 通过 `#[tool_router]` / `#[tool_handler]` 宏自动暴露工具
+- `get_user_from_parts()` - 从 HTTP request extensions 提取 UserContext
+- `check_scope()` - 检查用户是否拥有指定 scope（公开方法，供集成测试使用）
 
-#### 已实现的工具
+### 已实现的工具
 
 | 工具 | 所需 Scope | 说明 |
 |------|-----------|------|
@@ -33,72 +37,45 @@ mcp/
 | `rag_clear` | `rag:write` | 清空知识库（危险操作） |
 | `rag_health` | `rag:admin` | LightRAG 健康检查 |
 
-#### 类型定义
+### 参数类型
 
-**请求类型**：
-- `ToolRequest` - 用 `#[serde(tag = "tool")]` 枚举路由
-- `QueryParams` - 查询参数（含默认值）
-- `InsertParams` - 插入参数
+- `QueryParams` - 查询参数（query / mode / top_k / response_type）
+- `InsertParams` - 插入参数（text / description）
 
-**响应类型**：
-- `ToolResponse` - 工具响应枚举
-- `QueryResult`, `InsertResult`, `ClearResult`, `HealthResult`
+参数 schema 由 `schemars` 自动生成，供 MCP 客户端通过 `tools/list` 发现。
 
 ## 实现状态
 
+- [x] rmcp v1.6 集成（Streamable HTTP）
 - [x] 4 个 MCP 工具的业务逻辑
 - [x] 基于 Scope 的权限检查
-- [x] 参数的默认值（mode/top_k/response_type）
-- [ ] **rmcp 集成**（当前直接实现 HTTP 处理，未使用 rmcp）
-- [ ] 工具的 JSON Schema 定义（供 MCP 客户端发现）
-- [ ] Streamable HTTP 协议支持
-- [ ] 工具列表端点（`tools/list`）
-
-## ⚠️ 重要说明：rmcp 集成待完成
-
-当前实现以 JSON over HTTP 的形式暴露工具，**尚未集成 rmcp**。要支持标准 MCP 协议，需要：
-
-1. 使用 `rmcp::StreamableHttpService` 包裹工具处理器
-2. 实现 rmcp 要求的 `ServerHandler` trait
-3. 将路由切换为 rmcp 标准端点
-
-现阶段的架构先确保业务逻辑正确，后续再接入 rmcp。
-
-## 使用示例
-
-```rust
-use crate::mcp::{McpServer, ToolRequest, QueryParams};
-
-let server = McpServer::new(config);
-let user = server.validate_token("bearer_token")?;
-
-// 调用工具
-let request = ToolRequest::Query(QueryParams {
-    query: "What is Rust?".to_string(),
-    mode: "hybrid".to_string(),
-    top_k: 60,
-    response_type: "Multiple Paragraphs".to_string(),
-});
-let response = server.handle_tool(&user, request).await?;
-```
+- [x] 参数默认值从 `[defaults]` 配置读取
+- [x] 服务器信息从 `[mcp]` 配置读取（`server_name` / `version`）
+- [x] JSON Schema 自动生成（`schemars`）
+- [x] 工具发现接口 `tools/list`
+- [ ] 流式查询响应
+- [ ] 工具调用的输入验证（如 query 模式枚举）
 
 ## 配置
 
-工具使用的默认参数：
-
 ```toml
+[mcp]
+server_name = "pangenmcp"
+version = "0.1.0"
+
 [defaults]
 query_mode = "hybrid"
 top_k = 60
 response_type = "Multiple Paragraphs"
 ```
 
-> 注：默认参数目前已在 `QueryParams` 中硬编码，`[defaults]` 配置读取尚未接入。
+## 测试
+
+- 单元测试：`server.rs` 内 13 个测试，覆盖权限检查、参数默认值、user 提取
+- 集成测试：[../../tests/integration_test.rs](../../tests/integration_test.rs) 中的权限矩阵 12 个场景
 
 ## 待改进
 
-- [ ] 集成 rmcp，实现标准 MCP Streamable HTTP 协议
-- [ ] 从 `[defaults]` 配置读取默认参数
-- [ ] 实现工具发现接口（列出所有工具和参数 schema）
-- [ ] 添加流式查询支持
-- [ ] 添加工具调用的输入验证
+- [ ] 流式查询（`POST /query/stream`）支持
+- [ ] 工具参数语义验证（mode 枚举、top_k 范围）
+- [ ] 错误信息本地化

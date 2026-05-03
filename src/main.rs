@@ -1,11 +1,5 @@
-mod auth;
-mod config;
-mod error;
-mod http;
-mod mcp;
-mod rag;
-
 use anyhow::Result;
+use pangenmcp::{config, http};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]

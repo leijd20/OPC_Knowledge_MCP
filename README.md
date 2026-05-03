@@ -184,21 +184,30 @@ curl -X POST http://localhost:8080/mcp \
 
 ```
 src/
-├── main.rs              # 入口点
-├── http/                # HTTP 服务器
-├── mcp/                 # MCP 协议实现
-├── rag/                 # LightRAG 客户端
-├── auth/                # 认证和审计
-├── config.rs            # 配置加载
-└── error.rs             # 错误类型
+├── lib.rs              # 库入口（导出公共模块）
+├── main.rs             # 程序入口
+├── config.rs           # 配置加载
+├── error.rs            # 错误类型
+├── http/               # HTTP 服务器和认证中间件
+├── mcp/                # MCP 工具实现
+├── rag/                # LightRAG 客户端
+└── auth/               # 认证和审计
+tests/
+└── integration_test.rs # 集成测试
+scripts/                # E2E shell 测试脚本
 ```
 
 ### 运行测试
 
-单元测试：
-
 ```bash
+# 全部测试（单元 + 集成）
 cargo test
+
+# 仅单元测试
+cargo test --lib
+
+# 仅集成测试
+cargo test --test integration_test
 ```
 
 端到端测试（需要 LightRAG 服务运行）：
@@ -212,7 +221,7 @@ export ADMIN_TOKEN=your_admin_token
 # 启动服务器
 cargo run &
 
-# 运行所有测试
+# 运行所有 E2E 测试
 bash scripts/test_all.sh
 
 # 或单独运行
@@ -284,7 +293,7 @@ curl http://localhost:9621/health
 - [架构设计](docs/DESIGN.md) - 详细的系统设计
 - [开发状态](docs/STATUS.md) - 实现状态和待办事项
 - [开发计划](tasks/README.md) - 任务列表和里程碑
-- [AI 协作规范](docs/CLAUDE.md) - 开发规范
+- [AI 协作规范](CLAUDE.md) - 开发原则和工作流
 
 ## 许可证
 

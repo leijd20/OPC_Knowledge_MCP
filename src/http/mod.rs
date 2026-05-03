@@ -12,8 +12,8 @@ pub struct AppState {
     pub token_validator: TokenValidator,
 }
 
-pub async fn serve(config: Config) -> anyhow::Result<()> {
-    let shared_state = Arc::new(SharedState::new(&config));
+pub fn build_app(config: &Config) -> Router {
+    let shared_state = Arc::new(SharedState::new(config));
     let token_validator = shared_state.token_validator.clone();
 
     let app_state = Arc::new(AppState { token_validator });
@@ -28,13 +28,17 @@ pub async fn serve(config: Config) -> anyhow::Result<()> {
         )
     };
 
-    let app = Router::new()
+    Router::new()
         .nest_service("/mcp", mcp_service)
         .layer(axum_middleware::from_fn_with_state(
             app_state.clone(),
             middleware::auth_middleware,
         ))
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+}
+
+pub async fn serve(config: Config) -> anyhow::Result<()> {
+    let app = build_app(&config);
 
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;

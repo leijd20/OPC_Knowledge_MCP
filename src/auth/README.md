@@ -83,6 +83,13 @@ audit_log_path = "./logs/audit.log"
 3. **审计日志**：所有操作都被记录，便于追踪
 4. **敏感信息**：日志中不输出完整 token
 
+## 测试
+
+- 单元测试：
+  - `token.rs` 内 7 个测试（new / validate / has_scope）
+  - `audit.rs` 内 7 个测试（目录创建 / 写入 / 追加 / I/O 错误处理）
+- 集成测试覆盖权限矩阵 12 个场景（见 `tests/integration_test.rs`）
+
 ## 待改进
 
 - [ ] 实现 Token 过期机制
