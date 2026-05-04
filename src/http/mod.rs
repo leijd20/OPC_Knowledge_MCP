@@ -1,4 +1,5 @@
 pub mod middleware;
+pub mod static_files;
 
 use crate::auth::TokenValidator;
 use crate::config::Config;
@@ -49,6 +50,8 @@ pub fn build_app(config: &Config) -> Router {
     Router::new()
         .merge(mcp_router)
         .nest("/api", api_router)
+        // 静态文件 fallback：所有未匹配路由（除了 /mcp、/api）走静态文件服务
+        .fallback(static_files::serve_static)
         .layer(TraceLayer::new_for_http())
 }
 

@@ -1319,3 +1319,62 @@ async fn test_api_audit_logs_filters_by_user() {
     assert_eq!(logs.len(), 2);
     assert!(logs.iter().all(|log| log["user"] == "alice"));
 }
+
+// --- 迭代 9: 静态文件服务 ---
+
+#[tokio::test]
+async fn test_static_index_returns_html() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let content_type = response.headers().get(header::CONTENT_TYPE).unwrap();
+    assert!(content_type.to_str().unwrap().contains("text/html"));
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let html = String::from_utf8(body.to_vec()).unwrap();
+    assert!(html.contains("PangenMCP Admin"));
+}
+
+#[tokio::test]
+async fn test_static_css_returns_stylesheet() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/style.css")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let content_type = response.headers().get(header::CONTENT_TYPE).unwrap();
+    assert!(content_type.to_str().unwrap().contains("text/css"));
+}
+
+#[tokio::test]
+async fn test_static_nonexistent_returns_404() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/nonexistent.js")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
