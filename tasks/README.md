@@ -60,12 +60,13 @@
 
 ---
 
-### Phase 4: 功能完善 ⬜ 待开始
+### Phase 4: 功能完善 🔄 进行中
 
 **时间**：2026-05-04 ~ 待定  
-**状态**：⬜ 未开始
+**状态**：🔄 部分完成
 
-- [ ] 管理界面（配置修改、Token 管理、审计日志、系统监控）
+- [x] 管理界面（配置修改、Token 管理、审计日志、系统监控）✅ Task 4.1 完成
+- [ ] Alpine.js 前端重构（Task 4.1.3）
 - [ ] 配置热重载
 - [ ] 监控和指标（Prometheus）
 
@@ -74,14 +75,16 @@
 > - 文件上传已移除（仅支持纯文本插入）
 > - 批量操作已移除（手动循环调用 `rag_insert` 即可）
 > - CORS 已移除（管理界面嵌入同一服务器，无需跨域）
+> - Tauri 桌面应用已取消（过于复杂，改用 Alpine.js 轻量方案）
 
 **任务详情**：
 - [Task 4.0: Phase 4 总览](task4-0-phase4-overview.md)
-- [Task 4.1: 管理界面](task4-1-admin-ui.md) ⬜
+- [Task 4.1: 管理界面](task4-1-admin-ui.md) ✅ 已完成
+- [Task 4.1.3: Alpine.js 前端重构](task4-1-3-alpinejs-refactor.md) 🔄 进行中
 - [Task 4.2: 配置热重载](task4-2-hot-reload.md) ⬜
 - [Task 4.3: 监控和指标](task4-3-metrics.md) ⬜
 
-**产出**：生产级功能（Web 管理界面、配置热重载、Prometheus metrics）
+**产出**：生产级功能（Web 管理界面、Alpine.js 前端、配置热重载、Prometheus metrics）
 
 ---
 
