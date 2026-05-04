@@ -43,8 +43,8 @@ pub fn build_app(config: &Config) -> Router {
             middleware::auth_middleware,
         ));
 
-    // 管理 API 路由（迭代 1: /api/health 无需认证；后续端点会按需添加认证）
-    let api_router = crate::api::router().with_state(app_state.clone());
+    // 管理 API 路由（部分端点需要认证；router 内部按需挂载中间件）
+    let api_router = crate::api::router(app_state.clone()).with_state(app_state.clone());
 
     Router::new()
         .merge(mcp_router)

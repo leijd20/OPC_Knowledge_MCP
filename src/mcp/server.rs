@@ -2,6 +2,7 @@ use crate::auth::{TokenValidator, UserContext};
 use crate::auth::audit::AuditLogger;
 use crate::config::{Config, DefaultsConfig};
 use crate::rag::{LightRagClient, QueryRequest, InsertRequest};
+use crate::stats::StatsCollector;
 use rmcp::{
     tool, tool_handler, tool_router, ErrorData, ServerHandler,
 };
@@ -11,6 +12,8 @@ use rmcp::model::{CallToolResult, Content, ServerCapabilities, ServerInfo, Imple
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::sync::Arc;
+use std::time::Instant;
+use tokio::sync::RwLock;
 
 // 跨 session 共享的状态
 pub struct SharedState {
@@ -19,6 +22,8 @@ pub struct SharedState {
     pub audit_logger: AuditLogger,
     pub defaults: DefaultsConfig,
     pub mcp_config: crate::config::McpConfig,
+    /// 请求统计（线程安全；管理 API 通过此读取，工具方法通过此写入）
+    pub stats: Arc<RwLock<StatsCollector>>,
 }
 
 impl SharedState {
@@ -29,6 +34,7 @@ impl SharedState {
             audit_logger: AuditLogger::new(config.auth.audit_log_path.clone()),
             defaults: config.defaults.clone(),
             mcp_config: config.mcp.clone(),
+            stats: Arc::new(RwLock::new(StatsCollector::new())),
         }
     }
 }
@@ -96,6 +102,7 @@ impl McpServer {
         Parameters(params): Parameters<QueryParams>,
         Extension(parts): Extension<http::request::Parts>,
     ) -> Result<CallToolResult, ErrorData> {
+        let start = Instant::now();
         let user = self.get_user_from_parts(&parts)?;
         self.check_scope(&user, "rag:read")?;
 
@@ -109,12 +116,14 @@ impl McpServer {
         };
         let mode_used = request.mode.clone();
 
-        let response = self
-            .state
-            .rag_client
-            .query(request)
+        let result = self.state.rag_client.query(request).await;
+        self.state
+            .stats
+            .write()
             .await
-            .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
+            .record("rag_query", start.elapsed().as_millis() as f64, result.is_ok());
+
+        let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
         self.state.audit_logger.log(
             &user.name,
@@ -135,6 +144,7 @@ impl McpServer {
         Parameters(params): Parameters<InsertParams>,
         Extension(parts): Extension<http::request::Parts>,
     ) -> Result<CallToolResult, ErrorData> {
+        let start = Instant::now();
         let user = self.get_user_from_parts(&parts)?;
         self.check_scope(&user, "rag:write")?;
 
@@ -143,12 +153,14 @@ impl McpServer {
             description: params.description.clone(),
         };
 
-        let response = self
-            .state
-            .rag_client
-            .insert(request)
+        let result = self.state.rag_client.insert(request).await;
+        self.state
+            .stats
+            .write()
             .await
-            .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
+            .record("rag_insert", start.elapsed().as_millis() as f64, result.is_ok());
+
+        let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
         self.state.audit_logger.log(
             &user.name,
@@ -168,15 +180,18 @@ impl McpServer {
         &self,
         Extension(parts): Extension<http::request::Parts>,
     ) -> Result<CallToolResult, ErrorData> {
+        let start = Instant::now();
         let user = self.get_user_from_parts(&parts)?;
         self.check_scope(&user, "rag:write")?;
 
-        let response = self
-            .state
-            .rag_client
-            .clear()
+        let result = self.state.rag_client.clear().await;
+        self.state
+            .stats
+            .write()
             .await
-            .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
+            .record("rag_clear", start.elapsed().as_millis() as f64, result.is_ok());
+
+        let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
         self.state.audit_logger.log(
             &user.name,
@@ -196,15 +211,18 @@ impl McpServer {
         &self,
         Extension(parts): Extension<http::request::Parts>,
     ) -> Result<CallToolResult, ErrorData> {
+        let start = Instant::now();
         let user = self.get_user_from_parts(&parts)?;
         self.check_scope(&user, "rag:admin")?;
 
-        let response = self
-            .state
-            .rag_client
-            .health()
+        let result = self.state.rag_client.health().await;
+        self.state
+            .stats
+            .write()
             .await
-            .map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
+            .record("rag_health", start.elapsed().as_millis() as f64, result.is_ok());
+
+        let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
         self.state.audit_logger.log(
             &user.name,

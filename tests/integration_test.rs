@@ -495,3 +495,92 @@ async fn test_api_health_reports_lightrag_unreachable() {
     // LightRAG 不可达
     assert_eq!(json["lightrag"]["status"], "unreachable");
 }
+
+// --- 迭代 2: GET /api/stats (需要 stats:read scope) ---
+
+#[tokio::test]
+async fn test_api_stats_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/stats")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_stats_rejects_token_without_stats_read_scope() {
+    // alice 只有 rag:read，没有 stats:read，应被拒绝
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/stats")
+        .header(header::AUTHORIZATION, "Bearer alice-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_stats_returns_empty_initially() {
+    // 带 stats:read scope 的 admin 可以访问，初始无请求记录
+    let config = build_test_config_with_admin_stats();
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/stats")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(json["total_requests"], 0);
+    assert_eq!(json["total_errors"], 0);
+    assert!(json["uptime_seconds"].is_number());
+    assert!(json["by_tool"].is_object());
+}
+
+fn build_test_config_with_admin_stats() -> Config {
+    let mut config = build_test_config("http://localhost:9999");
+    // 给 admin 加上 stats:read scope
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("stats:read".to_string());
+    }
+    config
+}
+
+#[tokio::test]
+async fn test_stats_records_tool_invocation() {
+    // 调用 SharedState 的 stats 接口直接验证记录逻辑
+    // （工具方法记录的回归在单元测试中已覆盖；这里验证 API 暴露的快照正确）
+    let config = build_test_config_with_admin_stats();
+    let shared = Arc::new(SharedState::new(&config));
+
+    // 直接记录一次（模拟工具执行）
+    shared.stats.write().await.record("rag_query", 123.0, true);
+    shared.stats.write().await.record("rag_query", 456.0, false);
+
+    let snap = shared.stats.read().await.snapshot();
+    assert_eq!(snap.total_requests, 2);
+    assert_eq!(snap.total_errors, 1);
+    let tool = snap.by_tool.get("rag_query").expect("rag_query stats");
+    assert_eq!(tool.requests, 2);
+    assert_eq!(tool.errors, 1);
+}
