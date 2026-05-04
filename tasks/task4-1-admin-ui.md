@@ -54,6 +54,188 @@
 
 ---
 
+## TDD 实施计划
+
+按照 Red-Green-Refactor 原则，从简单到复杂逐个实现 API 端点。每个迭代都是：
+1. **Red**：写集成测试，运行确认失败
+2. **Green**：实现最小可用代码，让测试通过
+3. **Refactor**：重构优化，测试保持绿色
+
+### 迭代 1：GET /api/health（无需认证）
+
+**目标**：最简单的 API，返回服务器和 LightRAG 健康状态。
+
+**Red**：
+```rust
+// tests/integration_test.rs
+#[tokio::test]
+async fn test_api_health_returns_server_info() {
+    let app = build_test_app();
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/api/health")
+            .body(Body::empty())
+            .unwrap()
+    ).await.unwrap();
+    
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert!(json["server"]["status"].as_str().unwrap() == "healthy");
+    assert!(json["lightrag"]["status"].is_string());
+}
+```
+
+**Green**：
+- 创建 `src/api/health.rs`
+- 创建 `src/api/mod.rs` 注册路由
+- 在 `src/http/mod.rs` 中 nest `/api` 路由
+
+**Refactor**：提取 LightRAG 健康检查逻辑
+
+---
+
+### 迭代 2：GET /api/stats（需要 stats:read）
+
+**目标**：返回请求统计，需要认证和 SharedState.stats。
+
+**Red**：
+```rust
+#[tokio::test]
+async fn test_api_stats_requires_auth() {
+    let app = build_test_app();
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/api/stats")
+            .body(Body::empty())
+            .unwrap()
+    ).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_stats_returns_metrics() {
+    let app = build_test_app();
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/api/stats")
+            .header("Authorization", "Bearer admin-token")
+            .body(Body::empty())
+            .unwrap()
+    ).await.unwrap();
+    
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert!(json["total_requests"].is_number());
+}
+```
+
+**Green**：
+- 创建 `src/api/stats.rs`
+- SharedState 添加 `stats: RwLock<StatsCollector>` 字段
+- 工具方法记录统计（`rag_query` 等）
+
+**Refactor**：统一 stats 记录逻辑
+
+---
+
+### 迭代 3：GET /api/config（需要 config:read）
+
+**目标**：返回配置，token 字段脱敏。
+
+**Red**：
+```rust
+#[tokio::test]
+async fn test_api_config_masks_tokens() {
+    let app = build_test_app();
+    let response = app.oneshot(
+        Request::builder()
+            .uri("/api/config")
+            .header("Authorization", "Bearer admin-token")
+            .body(Body::empty())
+            .unwrap()
+    ).await.unwrap();
+    
+    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["auth"]["tokens"][0]["token"], "***");
+}
+```
+
+**Green**：
+- 创建 `src/api/config.rs`
+- SharedState 添加 `config: RwLock<Config>` 字段
+- Config 实现 `Serialize`，添加脱敏逻辑
+
+**Refactor**：提取脱敏函数
+
+---
+
+### 迭代 4：PATCH /api/config（需要 config:write）
+
+**Red**：测试修改配置后写入文件
+
+**Green**：
+- Config 添加 `save()` 方法
+- 验证、合并、写入逻辑
+
+**Refactor**：错误处理优化
+
+---
+
+### 迭代 5：GET /api/tokens（需要 token:read）
+
+**Red**：测试返回 token 列表（脱敏）
+
+**Green**：从 config 读取 tokens，前4后4字符
+
+**Refactor**：提取 token 预览函数
+
+---
+
+### 迭代 6：POST /api/tokens（需要 token:write）
+
+**Red**：测试创建 token 后可用于 MCP 调用
+
+**Green**：生成随机 token，写入 config.toml
+
+**Refactor**：token 生成逻辑提取
+
+---
+
+### 迭代 7：DELETE /api/tokens/:name（需要 token:write）
+
+**Red**：测试删除后 token 失效
+
+**Green**：从 config 移除，写入文件
+
+---
+
+### 迭代 8：GET /api/audit/logs（需要 audit:read）
+
+**Red**：测试分页和过滤
+
+**Green**：BufReader 逐行解析，应用过滤
+
+**Refactor**：日志解析逻辑提取
+
+---
+
+### 迭代 9：静态文件服务
+
+**Red**：测试 `GET /` 返回 HTML
+
+**Green**：rust-embed 嵌入，serve_index/serve_asset
+
+---
+
+### 迭代 10：前端界面
+
+**手动测试**：浏览器完整操作流程
+
+---
+
 ## 开发内容
 
 ### 阶段 1：后端 API 框架
