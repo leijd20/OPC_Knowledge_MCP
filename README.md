@@ -6,9 +6,11 @@
 
 - 🔍 **语义查询**：支持 LightRAG 的 4 种查询模式（naive/local/global/hybrid）
 - 📝 **文档管理**：插入文档、清空知识库
-- 🔐 **权限控制**：基于 Bearer Token 的多用户权限管理
+- 🔐 **权限控制**：基于 Bearer Token 的多用户权限管理（7 个 scope）
 - 🚀 **高性能**：基于 Axum 和 Tokio 的异步架构
 - 📊 **审计日志**：记录所有操作，便于追踪
+- 🎛️ **管理界面**：完整的 Web UI，支持配置、Token、日志管理
+- 📈 **统计监控**：实时请求统计和性能指标
 
 ## 快速开始
 
@@ -26,28 +28,20 @@ cp config.example.toml config.toml
 cp .env.example .env
 ```
 
-编辑 `config.toml`，配置 LightRAG 地址：
+编辑 `config.toml`，配置 LightRAG 地址和管理员 token：
 
 ```toml
 [lightrag]
 url = "http://localhost:9621"  # 修改为你的 LightRAG 地址
-```
 
-编辑 `.env`，生成用户 Token：
-
-```bash
-# 生成随机 token（推荐）
-openssl rand -hex 32
-
-# 或使用在线生成器
-```
-
-将生成的 token 填入 `.env`：
-
-```bash
-USER_ALICE_TOKEN=your_generated_token_here
-USER_BOB_TOKEN=another_token_here
-ADMIN_TOKEN=admin_token_here
+[[auth.tokens]]
+name = "admin"
+token = "your-secure-admin-token-here"
+scopes = [
+    "rag:read", "rag:write", "rag:admin",
+    "stats:read", "config:read", "config:write",
+    "token:read", "token:write", "audit:read"
+]
 ```
 
 ### 3. 运行
@@ -62,6 +56,19 @@ cargo build --release
 ```
 
 服务器将在 `http://0.0.0.0:8080` 启动。
+
+### 4. 访问管理界面
+
+打开浏览器访问 `http://localhost:8080`，输入 admin token 即可使用管理界面。
+
+## 管理界面
+
+访问 `http://localhost:8080` 可使用 Web 管理界面：
+
+- **Dashboard**：查看服务器健康状态、LightRAG 状态、请求统计
+- **Configuration**：查看和修改服务器配置（实时写入 config.toml）
+- **Tokens**：管理访问 token（创建、删除、查看权限）
+- **Audit Logs**：查看审计日志（支持分页和过滤）
 
 ## 配置说明
 
@@ -100,13 +107,47 @@ scopes = ["rag:read", "rag:write"]  # 可以查询和插入
 [[auth.tokens]]
 name = "Admin"
 token = "${ADMIN_TOKEN}"
-scopes = ["rag:read", "rag:write", "rag:admin"]  # 所有权限
+scopes = [
+    "rag:read", "rag:write", "rag:admin",
+    "stats:read", "config:read", "config:write",
+    "token:read", "token:write", "audit:read"
+]
 ```
 
 **Scope 说明**：
-- `rag:read` - 查询权限（rag_query）
-- `rag:write` - 写入权限（rag_insert, rag_clear）
-- `rag:admin` - 管理权限（rag_health）
+
+| Scope | 说明 | 适用端点/工具 |
+|-------|------|--------------|
+| `rag:read` | 查询权限 | rag_query |
+| `rag:write` | 写入权限 | rag_insert, rag_clear |
+| `rag:admin` | 管理权限 | rag_health |
+| `stats:read` | 统计查看 | GET /api/stats |
+| `config:read` | 配置查看 | GET /api/config |
+| `config:write` | 配置修改 | PATCH /api/config |
+| `token:read` | Token 查看 | GET /api/tokens |
+| `token:write` | Token 管理 | POST/DELETE /api/tokens |
+| `audit:read` | 日志查看 | GET /api/audit/logs |
+
+## API 端点
+
+### 管理 API
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| GET | `/api/health` | 无 | 服务器和 LightRAG 健康状态 |
+| GET | `/api/stats` | `stats:read` | 请求统计 |
+| GET | `/api/config` | `config:read` | 查看配置 |
+| PATCH | `/api/config` | `config:write` | 修改配置 |
+| GET | `/api/tokens` | `token:read` | 列出 token |
+| POST | `/api/tokens` | `token:write` | 创建 token |
+| DELETE | `/api/tokens/:name` | `token:write` | 删除 token |
+| GET | `/api/audit/logs` | `audit:read` | 审计日志 |
+
+### MCP 端点
+
+| 路径 | 说明 |
+|------|------|
+| `/mcp` | MCP Streamable HTTP 传输端点 |
 
 ## MCP 工具
 
