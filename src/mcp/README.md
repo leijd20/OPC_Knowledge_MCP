@@ -53,7 +53,6 @@ mcp/
 - [x] 服务器信息从 `[mcp]` 配置读取（`server_name` / `version`）
 - [x] JSON Schema 自动生成（`schemars`）
 - [x] 工具发现接口 `tools/list`
-- [ ] 流式查询响应
 - [ ] 工具调用的输入验证（如 query 模式枚举）
 
 ## 配置
@@ -76,6 +75,7 @@ response_type = "Multiple Paragraphs"
 
 ## 待改进
 
-- [ ] 流式查询（`POST /query/stream`）支持
 - [ ] 工具参数语义验证（mode 枚举、top_k 范围）
 - [ ] 错误信息本地化
+
+> **注**：MCP 协议不支持流式工具响应（`tools/call` 返回完整 `CallToolResult`），故不实现流式查询。
