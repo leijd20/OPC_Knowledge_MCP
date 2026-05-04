@@ -18,15 +18,24 @@ pub async fn auth_middleware(
         .headers()
         .get("Authorization")
         .and_then(|h| h.to_str().ok())
-        .ok_or_else(|| AppError::Auth("Missing Authorization header".to_string()))?;
+        .ok_or_else(|| {
+            crate::metrics::record_auth_failure("missing_header");
+            AppError::Auth("Missing Authorization header".to_string())
+        })?;
 
     // 验证 Bearer token
     let token = auth_header
         .strip_prefix("Bearer ")
-        .ok_or_else(|| AppError::Auth("Invalid Authorization header format".to_string()))?;
+        .ok_or_else(|| {
+            crate::metrics::record_auth_failure("invalid_format");
+            AppError::Auth("Invalid Authorization header format".to_string())
+        })?;
 
     // 验证 token（支持热重载）
-    let user = state.token_validator.read().await.validate(token)?;
+    let user = state.token_validator.read().await.validate(token).map_err(|e| {
+        crate::metrics::record_auth_failure("invalid_token");
+        e
+    })?;
 
     // 将用户上下文存入 request extensions
     request.extensions_mut().insert(user);

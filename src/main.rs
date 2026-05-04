@@ -14,6 +14,11 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // 初始化 Prometheus metrics
+    let metrics_handle = pangenmcp::metrics::init_metrics();
+    pangenmcp::metrics::register_metrics();
+    tracing::info!("Prometheus metrics initialized");
+
     // 获取配置文件路径
     let config_path = std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string());
 
@@ -66,6 +71,7 @@ async fn main() -> Result<()> {
         config.server.port,
         config.mcp.server_name.clone(),
         config.mcp.version.clone(),
+        metrics_handle,
     )
     .await?;
 

@@ -1,7 +1,7 @@
 # Task 4.3: 监控和指标
 
 **优先级**：🟢 低  
-**状态**：🔄 进行中（阶段 1 完成）  
+**状态**：🔄 进行中（阶段 2 完成）  
 **Phase**：Phase 4 - 功能完善  
 **依赖**：无  
 **开始时间**：2026-05-04  
@@ -46,33 +46,55 @@
 
 ---
 
-### 🔄 阶段 2：认证中间件集成 + /metrics 端点（待开始）
+### ✅ 阶段 2：认证中间件集成 + /metrics 端点（已完成）
 
-**目标**：
-1. 在认证中间件中记录认证失败
-2. 暴露 `GET /metrics` 端点
-3. 在 main.rs 中初始化 metrics
+**提交**：待提交
 
-**需要修改的文件**：
-- `src/http/middleware.rs` - 添加 `record_auth_failure()` 调用
-- `src/http/mod.rs` - 添加 `/metrics` 路由
-- `src/main.rs` - 初始化 metrics 并传递 handle
+**完成内容**：
+1. ✅ 修改 `src/metrics.rs`
+   - 使用 `OnceLock` 确保 Prometheus recorder 只初始化一次
+   - 支持多次调用 `init_metrics()` 而不会 panic
 
-**预计时间**：20 分钟
+2. ✅ 修改 `src/http/middleware.rs`
+   - 在认证失败时记录 metrics：
+     * `missing_header` - 缺少 Authorization header
+     * `invalid_format` - Bearer 格式错误
+     * `invalid_token` - token 验证失败
+
+3. ✅ 修改 `src/http/mod.rs`
+   - 添加 `GET /metrics` 路由（不需要认证）
+   - `build_app()` 接收 `PrometheusHandle` 参数
+   - `serve()` 接收 `PrometheusHandle` 参数
+
+4. ✅ 修改 `src/main.rs`
+   - 初始化 metrics：`init_metrics()` + `register_metrics()`
+   - 传递 `metrics_handle` 给 `http::serve()`
+
+5. ✅ 集成测试（`tests/integration_test.rs`）
+   - 添加 `build_test_app()` 辅助函数
+   - 批量更新所有测试使用新的辅助函数
+   - 新增 2 个 metrics 测试：
+     * `test_metrics_endpoint_returns_prometheus_format` - 验证 Prometheus 格式
+     * `test_metrics_endpoint_accessible_without_auth` - 验证无需认证
+
+**测试结果**：
+- 单元测试：80 passed
+- 集成测试：61 passed（+2 新增）
+- 总计：141 passed
 
 ---
 
-### ⬜ 阶段 3：集成测试（待开始）
+### 🔄 阶段 3：集成测试扩展（待开始）
 
-**目标**：添加 `/metrics` 端点的集成测试
+**目标**：添加更多 metrics 相关的集成测试
 
 **测试场景**：
-1. `GET /metrics` 返回 200 OK
-2. 响应包含 Prometheus 格式指标
-3. 工具调用后指标正确记录
-4. 认证失败后指标正确记录
+1. ✅ `GET /metrics` 返回 200 OK
+2. ✅ 响应包含 Prometheus 格式指标
+3. ⬜ 工具调用后指标正确记录
+4. ⬜ 认证失败后指标正确记录
 
-**预计时间**：15 分钟
+**预计时间**：10 分钟
 
 ---
 

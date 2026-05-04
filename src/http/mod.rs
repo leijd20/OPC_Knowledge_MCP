@@ -4,7 +4,8 @@ pub mod static_files;
 use crate::auth::TokenValidator;
 use crate::config::Config;
 use crate::mcp::{McpServer, SharedState};
-use axum::{middleware as axum_middleware, Router};
+use axum::{middleware as axum_middleware, routing::get, Router};
+use metrics_exporter_prometheus::PrometheusHandle;
 use rmcp::transport::StreamableHttpService;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -17,7 +18,7 @@ pub struct AppState {
     pub shared: Arc<SharedState>,
 }
 
-pub fn build_app(shared_state: Arc<SharedState>) -> Router {
+pub fn build_app(shared_state: Arc<SharedState>, metrics_handle: PrometheusHandle) -> Router {
     let token_validator = shared_state.token_validator.clone();
 
     let app_state = Arc::new(AppState {
@@ -51,13 +52,18 @@ pub fn build_app(shared_state: Arc<SharedState>) -> Router {
     Router::new()
         .merge(mcp_router)
         .nest("/api", api_router)
-        // 静态文件 fallback：所有未匹配路由（除了 /mcp、/api）走静态文件服务
+        // Metrics 端点（不需要认证）
+        .route("/metrics", get({
+            let handle = metrics_handle.clone();
+            move || async move { handle.render() }
+        }))
+        // 静态文件 fallback：所有未匹配路由（除了 /mcp、/api、/metrics）走静态文件服务
         .fallback(static_files::serve_static)
         .layer(TraceLayer::new_for_http())
 }
 
-pub async fn serve(shared_state: Arc<SharedState>, host: String, port: u16, server_name: String, version: String) -> anyhow::Result<()> {
-    let app = build_app(shared_state);
+pub async fn serve(shared_state: Arc<SharedState>, host: String, port: u16, server_name: String, version: String, metrics_handle: PrometheusHandle) -> anyhow::Result<()> {
+    let app = build_app(shared_state, metrics_handle);
 
     let addr = format!("{}:{}", host, port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;

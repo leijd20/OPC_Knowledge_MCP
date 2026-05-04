@@ -77,6 +77,13 @@ fn user_context(name: &str, scopes: &[&str]) -> UserContext {
     }
 }
 
+/// 创建测试用的 app（包含 metrics 初始化）
+fn build_test_app(config: &Config) -> axum::Router {
+    let metrics_handle = pangenmcp::metrics::init_metrics();
+    pangenmcp::metrics::register_metrics();
+    build_app(Arc::new(SharedState::new(config)), metrics_handle)
+}
+
 // ============================================================
 // 1. HTTP 认证集成测试（真实 axum Router）
 // ============================================================
@@ -84,7 +91,7 @@ fn user_context(name: &str, scopes: &[&str]) -> UserContext {
 #[tokio::test]
 async fn test_http_no_token_returns_unauthorized() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -106,7 +113,7 @@ async fn test_non_mcp_path_returns_not_found_without_auth() {
     // /.well-known/* 等非 /mcp 路径不应当被认证中间件拦截，
     // 应直接返回 404，避免触发 MCP 客户端的 OAuth 自动协商。
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -122,7 +129,7 @@ async fn test_non_mcp_path_returns_not_found_without_auth() {
 async fn test_register_endpoint_returns_not_found() {
     // OAuth 动态注册端点不存在，应返回 404 而非 401
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -137,7 +144,7 @@ async fn test_register_endpoint_returns_not_found() {
 #[tokio::test]
 async fn test_http_invalid_bearer_format_returns_unauthorized() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -153,7 +160,7 @@ async fn test_http_invalid_bearer_format_returns_unauthorized() {
 #[tokio::test]
 async fn test_http_invalid_token_returns_unauthorized() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -169,7 +176,7 @@ async fn test_http_invalid_token_returns_unauthorized() {
 #[tokio::test]
 async fn test_http_valid_token_passes_auth_layer() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -190,7 +197,7 @@ async fn test_http_valid_token_passes_auth_layer() {
 #[tokio::test]
 async fn test_http_empty_bearer_token_returns_unauthorized() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -428,7 +435,7 @@ async fn test_permission_matrix_admin_rag_health() {
 #[tokio::test]
 async fn test_api_health_accessible_without_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -445,7 +452,7 @@ async fn test_api_health_accessible_without_auth() {
 #[tokio::test]
 async fn test_api_health_returns_server_info() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -474,7 +481,7 @@ async fn test_api_health_returns_server_info() {
 async fn test_api_health_reports_lightrag_unreachable() {
     // LightRAG 不可达时，应当返回状态为 unreachable 而非 500
     let config = build_test_config("http://127.0.0.1:1");  // 不可达端口
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -501,7 +508,7 @@ async fn test_api_health_reports_lightrag_unreachable() {
 #[tokio::test]
 async fn test_api_stats_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -517,7 +524,7 @@ async fn test_api_stats_requires_auth() {
 async fn test_api_stats_rejects_token_without_stats_read_scope() {
     // alice 只有 rag:read，没有 stats:read，应被拒绝
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -534,7 +541,7 @@ async fn test_api_stats_rejects_token_without_stats_read_scope() {
 async fn test_api_stats_returns_empty_initially() {
     // 带 stats:read scope 的 admin 可以访问，初始无请求记录
     let config = build_test_config_with_admin_stats();
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -590,7 +597,7 @@ async fn test_stats_records_tool_invocation() {
 #[tokio::test]
 async fn test_api_config_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -605,7 +612,7 @@ async fn test_api_config_requires_auth() {
 #[tokio::test]
 async fn test_api_config_rejects_token_without_config_read_scope() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -625,7 +632,7 @@ async fn test_api_config_masks_tokens() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("config:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -662,7 +669,7 @@ async fn test_api_config_returns_complete_structure() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("config:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -690,7 +697,7 @@ async fn test_api_config_returns_complete_structure() {
 #[tokio::test]
 async fn test_api_config_patch_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::PATCH)
@@ -710,7 +717,7 @@ async fn test_api_config_patch_rejects_token_without_config_write_scope() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("config:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::PATCH)
@@ -765,7 +772,7 @@ response_type = "simple"
     // 加载配置并构建 app
     std::env::set_var("CONFIG_PATH", &config_path);
     let config = Config::load().unwrap();
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     // PATCH 请求修改 top_k
     let request = Request::builder()
@@ -793,7 +800,7 @@ async fn test_api_config_patch_rejects_invalid_config() {
         admin.scopes.push("config:read".to_string());
         admin.scopes.push("config:write".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     // 尝试设置无效的 top_k（超出范围）
     let request = Request::builder()
@@ -815,7 +822,7 @@ async fn test_api_config_patch_rejects_invalid_config() {
 #[tokio::test]
 async fn test_api_tokens_get_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -830,7 +837,7 @@ async fn test_api_tokens_get_requires_auth() {
 #[tokio::test]
 async fn test_api_tokens_get_rejects_without_token_read_scope() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -849,7 +856,7 @@ async fn test_api_tokens_get_returns_masked_list() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("token:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -882,7 +889,7 @@ async fn test_api_tokens_get_returns_masked_list() {
 #[tokio::test]
 async fn test_api_tokens_post_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -901,7 +908,7 @@ async fn test_api_tokens_post_rejects_without_token_write_scope() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("token:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -954,7 +961,7 @@ response_type = "simple"
 
     std::env::set_var("CONFIG_PATH", &config_path);
     let config = Config::load().unwrap();
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::POST)
@@ -987,7 +994,7 @@ async fn test_api_tokens_post_rejects_duplicate_name() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("token:write".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     // 尝试创建已存在的 token name
     let request = Request::builder()
@@ -1007,7 +1014,7 @@ async fn test_api_tokens_post_rejects_duplicate_name() {
 #[tokio::test]
 async fn test_api_tokens_delete_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::DELETE)
@@ -1025,7 +1032,7 @@ async fn test_api_tokens_delete_rejects_without_token_write_scope() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("token:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::DELETE)
@@ -1082,7 +1089,7 @@ response_type = "simple"
 
     std::env::set_var("CONFIG_PATH", &config_path);
     let config = Config::load().unwrap();
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::DELETE)
@@ -1109,7 +1116,7 @@ async fn test_api_tokens_delete_returns_404_for_nonexistent() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("token:write".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::DELETE)
@@ -1127,7 +1134,7 @@ async fn test_api_tokens_delete_returns_404_for_nonexistent() {
 #[tokio::test]
 async fn test_api_audit_logs_requires_auth() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1142,7 +1149,7 @@ async fn test_api_audit_logs_requires_auth() {
 #[tokio::test]
 async fn test_api_audit_logs_rejects_without_audit_read_scope() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1167,7 +1174,7 @@ async fn test_api_audit_logs_returns_empty_when_no_logs() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("audit:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1206,7 +1213,7 @@ async fn test_api_audit_logs_parses_and_returns_entries() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("audit:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1252,7 +1259,7 @@ async fn test_api_audit_logs_supports_pagination() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("audit:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     // 请求第 2 页，每页 3 条
     let request = Request::builder()
@@ -1300,7 +1307,7 @@ async fn test_api_audit_logs_filters_by_user() {
     if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
         admin.scopes.push("audit:read".to_string());
     }
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1325,7 +1332,7 @@ async fn test_api_audit_logs_filters_by_user() {
 #[tokio::test]
 async fn test_static_index_returns_html() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1349,7 +1356,7 @@ async fn test_static_index_returns_html() {
 #[tokio::test]
 async fn test_static_css_returns_stylesheet() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1367,7 +1374,7 @@ async fn test_static_css_returns_stylesheet() {
 #[tokio::test]
 async fn test_static_nonexistent_returns_404() {
     let config = build_test_config("http://localhost:9999");
-    let app = build_app(Arc::new(SharedState::new(&config)));
+    let app = build_test_app(&config);
 
     let request = Request::builder()
         .method(Method::GET)
@@ -1377,4 +1384,57 @@ async fn test_static_nonexistent_returns_404() {
 
     let response = app.oneshot(request).await.unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+// ============================================================
+// 9. Metrics 端点测试
+// ============================================================
+
+#[tokio::test]
+async fn test_metrics_endpoint_returns_prometheus_format() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_test_app(&config);
+
+    // 先记录一些指标
+    pangenmcp::metrics::record_request("rag_query", "test", "success");
+    pangenmcp::metrics::record_duration("rag_query", 100.0);
+    pangenmcp::metrics::set_lightrag_status(true);
+    pangenmcp::metrics::record_auth_failure("test_failure");
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/metrics")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+
+    // 验证 Prometheus 格式（至少包含指标名称）
+    assert!(text.contains("mcp_requests_total"));
+    assert!(text.contains("mcp_request_duration_ms"));
+    assert!(text.contains("lightrag_healthy"));
+    assert!(text.contains("mcp_auth_failures_total"));
+}
+
+#[tokio::test]
+async fn test_metrics_endpoint_accessible_without_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_test_app(&config);
+
+    // 不带 Authorization header
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/metrics")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    // metrics 端点不需要认证
+    assert_eq!(response.status(), StatusCode::OK);
 }

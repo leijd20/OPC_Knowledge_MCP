@@ -8,24 +8,32 @@
 
 use metrics::{counter, describe_counter, describe_gauge, describe_histogram, gauge, histogram};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+use std::sync::OnceLock;
+
+static METRICS_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
 
 /// 初始化 Prometheus 指标导出器
 ///
 /// 返回 PrometheusHandle，用于渲染 /metrics 端点
+/// 注意：此函数可以多次调用，但只会初始化一次（使用 OnceLock）
 pub fn init_metrics() -> PrometheusHandle {
-    // 配置直方图桶（毫秒）
-    let buckets = vec![
-        10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0,
-    ];
+    METRICS_HANDLE
+        .get_or_init(|| {
+            // 配置直方图桶（毫秒）
+            let buckets = vec![
+                10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0,
+            ];
 
-    PrometheusBuilder::new()
-        .set_buckets_for_metric(
-            Matcher::Full("mcp_request_duration_ms".to_string()),
-            &buckets,
-        )
-        .expect("failed to set histogram buckets")
-        .install_recorder()
-        .expect("failed to install Prometheus recorder")
+            PrometheusBuilder::new()
+                .set_buckets_for_metric(
+                    Matcher::Full("mcp_request_duration_ms".to_string()),
+                    &buckets,
+                )
+                .expect("failed to set histogram buckets")
+                .install_recorder()
+                .expect("failed to install Prometheus recorder")
+        })
+        .clone()
 }
 
 /// 注册指标描述（在初始化后调用）
