@@ -24,6 +24,8 @@ pub struct SharedState {
     pub mcp_config: crate::config::McpConfig,
     /// 请求统计（线程安全；管理 API 通过此读取，工具方法通过此写入）
     pub stats: Arc<RwLock<StatsCollector>>,
+    /// 当前完整配置（用于管理 API 读取/修改）
+    pub config: Arc<RwLock<Config>>,
 }
 
 impl SharedState {
@@ -35,6 +37,7 @@ impl SharedState {
             defaults: config.defaults.clone(),
             mcp_config: config.mcp.clone(),
             stats: Arc::new(RwLock::new(StatsCollector::new())),
+            config: Arc::new(RwLock::new(config.clone())),
         }
     }
 }

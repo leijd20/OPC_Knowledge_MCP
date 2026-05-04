@@ -584,3 +584,103 @@ async fn test_stats_records_tool_invocation() {
     assert_eq!(tool.requests, 2);
     assert_eq!(tool.errors, 1);
 }
+
+// --- 迭代 3: GET /api/config (需要 config:read scope) ---
+
+#[tokio::test]
+async fn test_api_config_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/config")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_config_rejects_token_without_config_read_scope() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/config")
+        .header(header::AUTHORIZATION, "Bearer alice-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_config_masks_tokens() {
+    let mut config = build_test_config("http://localhost:9999");
+    // 给 admin 加上 config:read scope
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("config:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/config")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    // 验证结构存在
+    assert!(json["server"].is_object());
+    assert!(json["auth"].is_object());
+    assert!(json["lightrag"].is_object());
+    assert!(json["defaults"].is_object());
+
+    // 验证 token 被脱敏
+    let tokens = json["auth"]["tokens"].as_array().expect("tokens array");
+    for token_obj in tokens {
+        let token_value = token_obj["token"].as_str().expect("token string");
+        assert_eq!(token_value, "***", "token should be masked");
+    }
+}
+
+#[tokio::test]
+async fn test_api_config_returns_complete_structure() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("config:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/config")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    // 验证关键字段
+    assert_eq!(json["server"]["host"], "127.0.0.1");
+    assert_eq!(json["server"]["port"], 0);
+    assert_eq!(json["lightrag"]["url"], "http://localhost:9999");
+    assert_eq!(json["defaults"]["query_mode"], "hybrid");
+    assert_eq!(json["defaults"]["top_k"], 10);
+}

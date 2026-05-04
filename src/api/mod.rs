@@ -3,10 +3,11 @@
 //! 提供 Web 管理界面所需的 HTTP API：
 //! - `/api/health` - 服务器和 LightRAG 健康状态（无需认证）
 //! - `/api/stats` - 请求统计（需要 `stats:read`）
-//! - `/api/config` - 配置查看和修改（待实现）
+//! - `/api/config` - 配置查看（需要 `config:read`）
 //! - `/api/tokens` - Token 管理（待实现）
 //! - `/api/audit/logs` - 审计日志（待实现）
 
+pub mod config;
 pub mod health;
 pub mod stats;
 
@@ -24,6 +25,7 @@ pub fn router(app_state: Arc<AppState>) -> Router<Arc<AppState>> {
     // 受保护的路由（需要 Bearer Token）
     let protected = Router::new()
         .route("/stats", get(stats::get_stats))
+        .route("/config", get(config::get_config))
         .route_layer(axum_middleware::from_fn_with_state(
             app_state,
             auth_middleware,
