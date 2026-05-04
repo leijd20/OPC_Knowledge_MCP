@@ -7,6 +7,7 @@
 - 🔍 **语义查询**：支持 LightRAG 的 4 种查询模式（naive/local/global/hybrid）
 - 📝 **文档管理**：插入文档、清空知识库
 - 🔐 **权限控制**：基于 Bearer Token 的多用户权限管理（7 个 scope）
+- 🔥 **配置热重载**：修改 config.toml 后自动重载，无需重启服务器
 - 🚀 **高性能**：基于 Axum 和 Tokio 的异步架构
 - 📊 **审计日志**：记录所有操作，便于追踪
 - 🎛️ **管理界面**：完整的 Web UI，支持配置、Token、日志管理
@@ -78,6 +79,45 @@ cargo build --release
 - **Configuration**：查看和修改服务器配置（实时写入 config.toml）
 - **Tokens**：管理访问 token（创建、删除、查看权限）
 - **Audit Logs**：查看审计日志（支持分页和过滤）
+
+## 配置热重载
+
+服务器支持配置热重载，修改 `config.toml` 后自动生效，无需重启。
+
+### 可热重载的配置
+
+| 配置项 | 说明 | 生效时间 |
+|--------|------|---------|
+| `auth.tokens` | Token 列表 | 1-2 秒内生效 |
+| `defaults.query_mode` | 查询模式默认值 | 新请求立即使用 |
+| `defaults.top_k` | Top K 默认值 | 新请求立即使用 |
+| `defaults.response_type` | 响应类型默认值 | 新请求立即使用 |
+
+**示例**：添加新用户
+
+1. 编辑 `config.toml`，添加新 token：
+```toml
+[[auth.tokens]]
+name = "newuser"
+token = "your-new-token"
+scopes = ["rag:read"]
+```
+
+2. 保存文件，服务器日志会显示：
+```
+INFO pangenmcp: Configuration file changed, reloading...
+INFO pangenmcp: Configuration reloaded successfully
+```
+
+3. 新 token 立即生效，无需重启服务器
+
+### 不可热重载的配置（需要重启）
+
+| 配置项 | 说明 | 原因 |
+|--------|------|------|
+| `server.host/port` | 监听地址 | 需要重新绑定 socket |
+| `lightrag.url` | LightRAG 地址 | HTTP 客户端已初始化 |
+| `mcp.server_name/version` | 服务器信息 | 已在 MCP initialize 返回 |
 
 ## 配置说明
 
