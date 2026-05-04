@@ -27,7 +27,6 @@ serde_json = "1.0"
 # 配置管理
 config = "0.14"
 toml = "0.8"
-dotenvy = "0.15"
 
 # 错误处理
 anyhow = "1.0"

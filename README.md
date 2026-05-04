@@ -25,7 +25,6 @@
 
 ```bash
 cp config.example.toml config.toml
-cp .env.example .env
 ```
 
 编辑 `config.toml`，配置 LightRAG 地址和管理员 token：
@@ -36,12 +35,22 @@ url = "http://localhost:9621"  # 修改为你的 LightRAG 地址
 
 [[auth.tokens]]
 name = "admin"
-token = "your-secure-admin-token-here"
+token = "your-secure-admin-token-here"  # 替换为实际 token
 scopes = [
     "rag:read", "rag:write", "rag:admin",
     "stats:read", "config:read", "config:write",
     "token:read", "token:write", "audit:read"
 ]
+```
+
+**生成安全的 token**：
+
+```bash
+# 使用 openssl 生成 32 字节随机 token
+openssl rand -hex 32
+
+# 或使用 Python
+python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 ### 3. 运行

@@ -18,17 +18,17 @@
 **加载流程**：
 1. 读取 `CONFIG_PATH` 环境变量（默认 `config.toml`）
 2. 解析 TOML 文件
-3. 展开 token 中的环境变量（`${VAR_NAME}` 格式）
+3. 验证配置有效性
 
 **配置结构**：
 ```
 Config
 ├── ServerConfig     - host, port
-├── McpConfig        - server_name, version（暂未使用）
+├── McpConfig        - server_name, version
 ├── AuthConfig       - tokens[], audit_log_path
 │   └── TokenConfig  - name, token, scopes[]
 ├── LightRagConfig   - url, timeout, max_retries, retry_delay
-└── DefaultsConfig   - query_mode, top_k, response_type（暂未使用）
+└── DefaultsConfig   - query_mode, top_k, response_type
 ```
 
 ## 错误处理 (`error.rs`)

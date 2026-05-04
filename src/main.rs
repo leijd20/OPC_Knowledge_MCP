@@ -14,7 +14,6 @@ async fn main() -> Result<()> {
         .init();
 
     // 加载配置
-    dotenvy::dotenv().ok();
     let config = config::Config::load()?;
 
     tracing::info!(
