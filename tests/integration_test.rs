@@ -335,28 +335,28 @@ fn make_test_server() -> McpServer {
 async fn test_permission_matrix_alice_rag_query() {
     let server = make_test_server();
     let user = user_context("alice", &["rag:read"]);
-    assert!(server.check_scope(&user, "rag:read").is_ok());
+    assert!(server.check_scope(&user, "rag:read").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_alice_rag_insert() {
     let server = make_test_server();
     let user = user_context("alice", &["rag:read"]);
-    assert!(server.check_scope(&user, "rag:write").is_err());
+    assert!(server.check_scope(&user, "rag:write").await.is_err());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_alice_rag_clear() {
     let server = make_test_server();
     let user = user_context("alice", &["rag:read"]);
-    assert!(server.check_scope(&user, "rag:write").is_err());
+    assert!(server.check_scope(&user, "rag:write").await.is_err());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_alice_rag_health() {
     let server = make_test_server();
     let user = user_context("alice", &["rag:read"]);
-    assert!(server.check_scope(&user, "rag:admin").is_err());
+    assert!(server.check_scope(&user, "rag:admin").await.is_err());
 }
 
 // --- Bob (rag:read + rag:write) ---
@@ -365,28 +365,28 @@ async fn test_permission_matrix_alice_rag_health() {
 async fn test_permission_matrix_bob_rag_query() {
     let server = make_test_server();
     let user = user_context("bob", &["rag:read", "rag:write"]);
-    assert!(server.check_scope(&user, "rag:read").is_ok());
+    assert!(server.check_scope(&user, "rag:read").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_bob_rag_insert() {
     let server = make_test_server();
     let user = user_context("bob", &["rag:read", "rag:write"]);
-    assert!(server.check_scope(&user, "rag:write").is_ok());
+    assert!(server.check_scope(&user, "rag:write").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_bob_rag_clear() {
     let server = make_test_server();
     let user = user_context("bob", &["rag:read", "rag:write"]);
-    assert!(server.check_scope(&user, "rag:write").is_ok());
+    assert!(server.check_scope(&user, "rag:write").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_bob_rag_health() {
     let server = make_test_server();
     let user = user_context("bob", &["rag:read", "rag:write"]);
-    assert!(server.check_scope(&user, "rag:admin").is_err());
+    assert!(server.check_scope(&user, "rag:admin").await.is_err());
 }
 
 // --- Admin (all scopes) ---
@@ -395,28 +395,28 @@ async fn test_permission_matrix_bob_rag_health() {
 async fn test_permission_matrix_admin_rag_query() {
     let server = make_test_server();
     let user = user_context("admin", &["rag:read", "rag:write", "rag:admin"]);
-    assert!(server.check_scope(&user, "rag:read").is_ok());
+    assert!(server.check_scope(&user, "rag:read").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_admin_rag_insert() {
     let server = make_test_server();
     let user = user_context("admin", &["rag:read", "rag:write", "rag:admin"]);
-    assert!(server.check_scope(&user, "rag:write").is_ok());
+    assert!(server.check_scope(&user, "rag:write").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_admin_rag_clear() {
     let server = make_test_server();
     let user = user_context("admin", &["rag:read", "rag:write", "rag:admin"]);
-    assert!(server.check_scope(&user, "rag:write").is_ok());
+    assert!(server.check_scope(&user, "rag:write").await.is_ok());
 }
 
 #[tokio::test]
 async fn test_permission_matrix_admin_rag_health() {
     let server = make_test_server();
     let user = user_context("admin", &["rag:read", "rag:write", "rag:admin"]);
-    assert!(server.check_scope(&user, "rag:admin").is_ok());
+    assert!(server.check_scope(&user, "rag:admin").await.is_ok());
 }
 
 // ============================================================
