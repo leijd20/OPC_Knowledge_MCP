@@ -8,7 +8,7 @@
 
 - **传输协议**：MCP Streamable HTTP（基于 [rmcp](https://crates.io/crates/rmcp)）
 - **HTTP 框架**：Axum
-- **认证**：Bearer Token + Scope 权限
+- **认证**：Bearer Token + 9 个 Scope 权限
 - **后端**：LightRAG HTTP API
 
 ## 项目结构

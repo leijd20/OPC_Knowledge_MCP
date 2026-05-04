@@ -4,159 +4,50 @@
 
 ## 功能特性
 
-- 🔍 **语义查询**：支持 LightRAG 的 4 种查询模式（naive/local/global/hybrid）
+- 🔍 **语义查询**：支持 4 种查询模式（naive/local/global/hybrid）
 - 📝 **文档管理**：插入文档、清空知识库
-- 🔐 **权限控制**：基于 Bearer Token 的多用户权限管理（7 个 scope）
-- 🔥 **配置热重载**：修改 config.toml 后自动重载，无需重启服务器
-- 🚀 **高性能**：基于 Axum 和 Tokio 的异步架构
-- 📊 **审计日志**：记录所有操作，便于追踪
-- 🎛️ **管理界面**：完整的 Web UI，支持配置、Token、日志管理
-- 📈 **统计监控**：实时请求统计和性能指标
-- 🔭 **Prometheus 指标**：`/metrics` 端点暴露请求量、耗时、健康状态等
+- 🔐 **权限控制**：Bearer Token + 9 个 scope 权限
+- 🔥 **配置热重载**：修改 config.toml 自动生效
+- 🎛️ **管理界面**：Web UI（Alpine.js + Tailwind CSS）
+- 📈 **监控指标**：Prometheus `/metrics` 端点
+- 📊 **审计日志**：记录所有操作
 
-## 快速开始
+## Quick Start
 
-### 1. 前置要求
+### 前置要求
 
 - Rust 1.70+
-- LightRAG 服务器已部署并运行
+- LightRAG 服务器运行在 `http://localhost:9621`
 
-### 2. 配置
-
-复制配置文件模板：
+### 5 分钟启动
 
 ```bash
+# 1. 复制配置文件
 cp config.example.toml config.toml
-```
 
-编辑 `config.toml`，配置 LightRAG 地址和管理员 token：
-
-```toml
-[lightrag]
-url = "http://localhost:9621"  # 修改为你的 LightRAG 地址
-
-[[auth.tokens]]
-name = "admin"
-token = "your-secure-admin-token-here"  # 替换为实际 token
-scopes = [
-    "rag:read", "rag:write", "rag:admin",
-    "stats:read", "config:read", "config:write",
-    "token:read", "token:write", "audit:read"
-]
-```
-
-**生成安全的 token**：
-
-```bash
-# 使用 openssl 生成 32 字节随机 token
+# 2. 生成管理员 token
 openssl rand -hex 32
 
-# 或使用 Python
-python3 -c "import secrets; print(secrets.token_hex(32))"
-```
+# 3. 编辑 config.toml，替换 admin token
+# 将生成的 token 填入 [[auth.tokens]] 的 token 字段
 
-### 3. 运行
-
-```bash
-# 开发模式
+# 4. 启动服务器
 cargo run
 
-# 生产模式
-cargo build --release
-./target/release/pangenmcp
+# 5. 访问 http://localhost:8080，输入 token 登录
 ```
 
-服务器将在 `http://0.0.0.0:8080` 启动。
+### 配置说明
 
-### 4. 访问管理界面
-
-打开浏览器访问 `http://localhost:8080`，输入 admin token 即可使用管理界面。
-
-## 管理界面
-
-访问 `http://localhost:8080` 可使用 Web 管理界面：
-
-- **Dashboard**：查看服务器健康状态、LightRAG 状态、请求统计
-- **Configuration**：查看和修改服务器配置（实时写入 config.toml）
-- **Tokens**：管理访问 token（创建、删除、查看权限）
-- **Audit Logs**：查看审计日志（支持分页和过滤）
-
-## 配置热重载
-
-服务器支持配置热重载，修改 `config.toml` 后自动生效，无需重启。
-
-### 可热重载的配置
-
-| 配置项 | 说明 | 生效时间 |
-|--------|------|---------|
-| `auth.tokens` | Token 列表 | 1-2 秒内生效 |
-| `defaults.query_mode` | 查询模式默认值 | 新请求立即使用 |
-| `defaults.top_k` | Top K 默认值 | 新请求立即使用 |
-| `defaults.response_type` | 响应类型默认值 | 新请求立即使用 |
-
-**示例**：添加新用户
-
-1. 编辑 `config.toml`，添加新 token：
-```toml
-[[auth.tokens]]
-name = "newuser"
-token = "your-new-token"
-scopes = ["rag:read"]
-```
-
-2. 保存文件，服务器日志会显示：
-```
-INFO pangenmcp: Configuration file changed, reloading...
-INFO pangenmcp: Configuration reloaded successfully
-```
-
-3. 新 token 立即生效，无需重启服务器
-
-### 不可热重载的配置（需要重启）
-
-| 配置项 | 说明 | 原因 |
-|--------|------|------|
-| `server.host/port` | 监听地址 | 需要重新绑定 socket |
-| `lightrag.url` | LightRAG 地址 | HTTP 客户端已初始化 |
-| `mcp.server_name/version` | 服务器信息 | 已在 MCP initialize 返回 |
-
-## 配置说明
-
-### LightRAG 配置
-
-在 `config.toml` 中配置 LightRAG 服务器：
+编辑 `config.toml`：
 
 ```toml
 [lightrag]
-url = "http://localhost:9621"    # LightRAG 地址
-timeout_seconds = 30              # 请求超时时间
-max_retries = 3                   # 失败重试次数
-retry_delay_seconds = 1           # 重试间隔
-```
-
-**注意**：
-- LightRAG 的 LLM 和 Embedding 模型配置在 LightRAG 服务器端
-- MCP 服务器只需要知道 LightRAG 的 HTTP 地址
-- 不需要配置 API Key（LightRAG 未启用认证）
-
-### 用户权限配置
-
-在 `config.toml` 中定义用户和权限：
-
-```toml
-[[auth.tokens]]
-name = "Alice (只读)"
-token = "${USER_ALICE_TOKEN}"
-scopes = ["rag:read"]             # 只能查询
-
-[[auth.tokens]]
-name = "Bob (读写)"
-token = "${USER_BOB_TOKEN}"
-scopes = ["rag:read", "rag:write"]  # 可以查询和插入
+url = "http://localhost:9621"  # LightRAG 地址
 
 [[auth.tokens]]
 name = "Admin"
-token = "${ADMIN_TOKEN}"
+token = "your-generated-token-here"
 scopes = [
     "rag:read", "rag:write", "rag:admin",
     "stats:read", "config:read", "config:write",
@@ -164,7 +55,27 @@ scopes = [
 ]
 ```
 
-**Scope 说明**：
+## 管理界面
+
+访问 `http://localhost:8080`：
+
+- **Dashboard**：健康状态、请求统计
+- **Configuration**：查看和修改配置
+- **Tokens**：管理访问 token
+- **Audit Logs**：查看审计日志
+
+## 配置热重载
+
+修改 `config.toml` 后自动生效（1-2 秒），无需重启：
+
+| 配置项 | 说明 |
+|--------|------|
+| `auth.tokens` | Token 列表 |
+| `defaults.*` | 查询默认参数 |
+
+**不可热重载**（需重启）：`server.host/port`、`lightrag.url`、`mcp.*`
+
+## 权限 Scope
 
 | Scope | 说明 | 适用端点/工具 |
 |-------|------|--------------|
@@ -184,7 +95,7 @@ scopes = [
 
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
-| GET | `/api/health` | 无 | 服务器和 LightRAG 健康状态 |
+| GET | `/api/health` | 无 | 健康状态 |
 | GET | `/api/stats` | `stats:read` | 请求统计 |
 | GET | `/api/config` | `config:read` | 查看配置 |
 | PATCH | `/api/config` | `config:write` | 修改配置 |
@@ -201,9 +112,9 @@ scopes = [
 
 ### 监控端点
 
-| 方法 | 路径 | 权限 | 说明 |
-|------|------|------|------|
-| GET | `/metrics` | 无 | Prometheus 格式监控指标 |
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/metrics` | Prometheus 格式监控指标 |
 
 详见 [docs/monitoring.md](docs/monitoring.md)。
 
@@ -219,11 +130,7 @@ scopes = [
 }
 ```
 
-**查询模式**：
-- `hybrid` - 推荐，结合局部和全局检索
-- `local` - 基于实体的精确检索
-- `global` - 基于主题的宏观检索
-- `naive` - 简单向量检索
+**查询模式**：`hybrid`（推荐）、`local`、`global`、`naive`
 
 ### rag_insert - 插入文档
 
@@ -244,21 +151,15 @@ scopes = [
 
 ## 使用示例
 
-### 使用 Claude Code
+### Claude Code 配置
 
-使用命令进行配置
-```
+```bash
 claude mcp add --transport http \
   ragMCP http://127.0.0.1:8080/mcp \
-  --header "Authorization: Bearer <token>"
-
-#例如
-claude mcp add --transport http \
-  ragMCP http://127.0.0.1:8080/mcp \
-  --header "Authorization": "Bearer MJxfiqTDt58VjhP3v2wJMGPDPENFR2k4"
+  --header "Authorization: Bearer <your-token>"
 ```
 
-或在 Claude Code 中配置 MCP 服务器：
+或在配置文件中：
 
 ```json
 {
@@ -273,7 +174,7 @@ claude mcp add --transport http \
 }
 ```
 
-### 使用 curl 测试
+### curl 测试
 
 ```bash
 # 查询
@@ -295,27 +196,22 @@ curl -X POST http://localhost:8080/mcp \
 
 ```
 src/
-├── lib.rs              # 库入口（导出公共模块）
 ├── main.rs             # 程序入口
 ├── config.rs           # 配置加载
 ├── error.rs            # 错误类型
 ├── http/               # HTTP 服务器和认证中间件
 ├── mcp/                # MCP 工具实现
 ├── rag/                # LightRAG 客户端
-└── auth/               # 认证和审计
-tests/
-└── integration_test.rs # 集成测试
-scripts/                # E2E shell 测试脚本
+├── auth/               # 认证和审计
+├── stats/              # 统计收集
+├── api/                # 管理 API
+└── metrics/            # Prometheus 指标
 ```
 
 ### 运行测试
 
-#### 1. 单元测试（推荐，快速）
-
-测试各模块的业务逻辑，无需外部依赖：
-
 ```bash
-# 全部测试（单元 + 集成）
+# 全部测试（144 个：80 单元 + 64 集成）
 cargo test
 
 # 仅单元测试
@@ -323,112 +219,32 @@ cargo test --lib
 
 # 仅集成测试
 cargo test --test integration_test
-```
 
-#### 2. 端到端测试（需要 LightRAG 环境）
-
-验证与真实 LightRAG 的集成，用于部署后验证：
-
-```bash
-# 设置测试用 token
-export ALICE_TOKEN=your_alice_token
-export BOB_TOKEN=your_bob_token
-export ADMIN_TOKEN=your_admin_token
-
-# 启动服务器
-cargo run &
-
-# 运行所有 E2E 测试
-bash scripts/test_all.sh
-
-# 或单独运行
-bash scripts/test_functions.sh    # 功能测试
-bash scripts/test_permissions.sh  # 权限测试
-bash scripts/test_errors.sh       # 错误处理测试
-```
-
-**测试建议**：
-- **开发时**：运行单元测试（`cargo test --lib`），快速验证逻辑
-- **提交前**：运行所有测试（`cargo test`），确保集成正常
-- **部署后**：运行端到端测试（`bash scripts/test_all.sh`），验证真实集成
-
-### 代码格式化
-
-```bash
+# 代码格式化
 cargo fmt
 cargo clippy
 ```
 
-## 部署
+## 监控
 
-### Docker（待实现）
+Prometheus 指标端点：`GET /metrics`
 
-```bash
-docker build -t pangenmcp .
-docker run -p 8080:8080 --env-file .env pangenmcp
-```
+主要指标：
+- `mcp_requests_total` - 请求总数（按工具、用户、状态）
+- `mcp_request_duration_ms` - 请求耗时直方图
+- `lightrag_healthy` - LightRAG 健康状态
+- `mcp_auth_failures_total` - 认证失败次数
 
-### Systemd 服务（待实现）
-
-```ini
-[Unit]
-Description=pangenMCP Server
-After=network.target
-
-[Service]
-Type=simple
-User=mcp
-WorkingDirectory=/opt/pangenmcp
-ExecStart=/opt/pangenmcp/pangenmcp
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-## 故障排除
-
-### LightRAG 连接失败
-
-检查 LightRAG 是否运行：
-
-```bash
-curl http://localhost:9621/health
-```
-
-检查配置文件中的 URL 是否正确。
-
-### 认证失败
-
-确保：
-1. `.env` 文件中的 token 已正确设置
-2. 请求中的 `Authorization: Bearer <token>` header 正确
-3. Token 对应的 scope 包含所需权限
-
-### 查看日志
-
-审计日志位置：`./logs/audit.log`
+详见 [docs/monitoring.md](docs/monitoring.md)。
 
 ## 文档
 
-- [快速开始](#快速开始) - 本文档
-- [架构设计](docs/DESIGN.md) - 详细的系统设计
-- [开发状态](docs/STATUS.md) - 实现状态和待办事项
+- [架构设计](docs/DESIGN.md) - 系统设计和技术选型
+- [开发状态](docs/STATUS.md) - 实现状态和测试覆盖
 - [开发计划](tasks/README.md) - 任务列表和里程碑
+- [监控指南](docs/monitoring.md) - Prometheus 集成
 - [AI 协作规范](CLAUDE.md) - 开发原则和工作流
 
 ## 许可证
 
 MIT
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-查看 [开发计划](tasks/README.md) 了解当前的任务和优先级。
-
-## 相关链接
-
-- [LightRAG](https://github.com/HKUDS/LightRAG)
-- [MCP 协议规范](https://modelcontextprotocol.io/)
-- [rmcp](https://crates.io/crates/rmcp)
