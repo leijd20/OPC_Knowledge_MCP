@@ -1,9 +1,92 @@
 # Task 4.2: 配置热重载
 
 **优先级**：🟢 低  
-**状态**：⬜ 未开始  
+**状态**：🔄 进行中（阶段 1 完成）  
 **Phase**：Phase 4 - 功能完善  
-**依赖**：无
+**依赖**：无  
+**开始时间**：2026-05-04  
+**预计完成**：2026-05-04
+
+---
+
+## 实施进度
+
+### ✅ 阶段 1：ConfigWatcher 基础设施（已完成）
+
+**提交**：`94ceb00` - feat(config): add ConfigWatcher for hot reload - Phase 1
+
+**完成内容**：
+1. ✅ 添加 `notify = "6.1"` 依赖
+2. ✅ 实现 `ConfigWatcher` 结构体
+   - 使用 `notify::RecommendedWatcher` 监听文件变化
+   - 返回 `tokio::sync::watch::Receiver<Config>` 通道
+   - 处理 `EventKind::Modify` 事件
+   - 配置解析失败时保留旧配置并记录错误日志
+3. ✅ 添加 `Config::from_file()` 方法（支持环境变量展开）
+4. ✅ 添加 `Config::from_str()` 方法（供测试使用）
+5. ✅ 单元测试：
+   - `test_config_watcher_detects_changes` - 验证文件变化检测
+   - `test_config_reload_invalid_syntax` - 验证错误处理
+
+**测试结果**：79 个单元测试通过（+2 新增）
+
+---
+
+### 🔄 阶段 2：SharedState 改造（进行中）
+
+**目标**：将 `TokenValidator` 和 `DefaultsConfig` 改为 `RwLock` 包装，支持运行时更新
+
+**需要修改的文件**：
+- `src/mcp/server.rs` - SharedState 结构体
+- `src/mcp/tools.rs` - 工具方法中的访问方式
+- `src/http/middleware.rs` - 认证中间件
+
+**改动点**：
+```rust
+// 之前
+pub struct SharedState {
+    pub token_validator: Arc<TokenValidator>,
+    pub defaults: DefaultsConfig,
+}
+
+// 之后
+pub struct SharedState {
+    pub token_validator: Arc<RwLock<TokenValidator>>,
+    pub defaults: Arc<RwLock<DefaultsConfig>>,
+}
+```
+
+---
+
+### ⬜ 阶段 3：主程序集成（待开始）
+
+**目标**：在 `main.rs` 中启动配置热重载任务
+
+**实现内容**：
+1. 创建 `ConfigWatcher` 并获取 `watch::Receiver`
+2. 启动后台任务监听配置变化
+3. 配置变化时更新 `SharedState` 中的可变部分
+
+---
+
+### ⬜ 阶段 4：集成测试（待开始）
+
+**目标**：添加端到端热重载测试
+
+**测试场景**：
+1. 修改配置添加新 token，验证新 token 立即生效
+2. 修改配置删除旧 token，验证旧 token 立即失效
+3. 修改 defaults，验证新请求使用新默认值
+4. 配置语法错误，验证保留旧配置
+
+---
+
+### ⬜ 阶段 5：文档更新（待开始）
+
+**需要更新的文档**：
+- `README.md` - 说明可/不可热重载的配置项
+- `docs/STATUS.md` - 标记配置热重载为已实现
+- `tasks/README.md` - 更新 Task 4.2 状态
 
 ---
 
