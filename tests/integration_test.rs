@@ -418,3 +418,80 @@ async fn test_permission_matrix_admin_rag_health() {
     let user = user_context("admin", &["rag:read", "rag:write", "rag:admin"]);
     assert!(server.check_scope(&user, "rag:admin").is_ok());
 }
+
+// ============================================================
+// 4. 管理 API 集成测试
+// ============================================================
+
+// --- 迭代 1: GET /api/health (无需认证) ---
+
+#[tokio::test]
+async fn test_api_health_accessible_without_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/health")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    // /api/health 不需要认证，应该返回 200（即使 LightRAG 不可达）
+    assert_ne!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn test_api_health_returns_server_info() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/health")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    // 服务器信息
+    assert_eq!(json["server"]["status"], "healthy");
+    assert!(json["server"]["version"].is_string());
+
+    // LightRAG 信息字段存在（状态可能是 unreachable，因为 mock url 不可达）
+    assert!(json["lightrag"]["url"].is_string());
+    assert!(json["lightrag"]["status"].is_string());
+}
+
+#[tokio::test]
+async fn test_api_health_reports_lightrag_unreachable() {
+    // LightRAG 不可达时，应当返回状态为 unreachable 而非 500
+    let config = build_test_config("http://127.0.0.1:1");  // 不可达端口
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/health")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    // 服务器仍然健康
+    assert_eq!(json["server"]["status"], "healthy");
+    // LightRAG 不可达
+    assert_eq!(json["lightrag"]["status"], "unreachable");
+}

@@ -51,8 +51,32 @@ mod tests {
             audit_log_path: "test_audit.log".to_string(),
         };
 
+        let config = crate::config::Config {
+            server: crate::config::ServerConfig {
+                host: "127.0.0.1".to_string(),
+                port: 8080,
+            },
+            mcp: crate::config::McpConfig {
+                server_name: "test".to_string(),
+                version: "0.1.0".to_string(),
+            },
+            auth: auth_config.clone(),
+            lightrag: crate::config::LightRagConfig {
+                url: "http://localhost:9621".to_string(),
+                timeout_seconds: 5,
+                max_retries: 1,
+                retry_delay_seconds: 0,
+            },
+            defaults: crate::config::DefaultsConfig {
+                query_mode: "hybrid".to_string(),
+                top_k: 10,
+                response_type: "Multiple Paragraphs".to_string(),
+            },
+        };
+
         Arc::new(AppState {
             token_validator: TokenValidator::new(&auth_config),
+            shared: Arc::new(crate::mcp::SharedState::new(&config)),
         })
     }
 

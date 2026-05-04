@@ -26,6 +26,11 @@ impl LightRagClient {
         }
     }
 
+    /// 返回 LightRAG 服务器的 base URL（用于健康检查 API 暴露给客户端）
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
     pub async fn query(&self, request: QueryRequest) -> Result<QueryResponse, AppError> {
         let url = format!("{}/query", self.base_url);
         self.retry_request(|| async {

@@ -10,13 +10,18 @@ use tower_http::trace::TraceLayer;
 
 pub struct AppState {
     pub token_validator: TokenValidator,
+    /// 共享状态（API handler 通过此访问 rag_client、stats、config 等）
+    pub shared: Arc<SharedState>,
 }
 
 pub fn build_app(config: &Config) -> Router {
     let shared_state = Arc::new(SharedState::new(config));
     let token_validator = shared_state.token_validator.clone();
 
-    let app_state = Arc::new(AppState { token_validator });
+    let app_state = Arc::new(AppState {
+        token_validator,
+        shared: shared_state.clone(),
+    });
 
     // 创建 MCP 服务（工厂函数）
     let mcp_service = {
@@ -38,8 +43,12 @@ pub fn build_app(config: &Config) -> Router {
             middleware::auth_middleware,
         ));
 
+    // 管理 API 路由（迭代 1: /api/health 无需认证；后续端点会按需添加认证）
+    let api_router = crate::api::router().with_state(app_state.clone());
+
     Router::new()
         .merge(mcp_router)
+        .nest("/api", api_router)
         .layer(TraceLayer::new_for_http())
 }
 
