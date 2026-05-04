@@ -38,10 +38,7 @@ pub fn init_metrics() -> PrometheusHandle {
 
 /// 注册指标描述（在初始化后调用）
 pub fn register_metrics() {
-    describe_counter!(
-        "mcp_requests_total",
-        "Total number of MCP tool calls"
-    );
+    describe_counter!("mcp_requests_total", "Total number of MCP tool calls");
     describe_histogram!(
         "mcp_request_duration_ms",
         "MCP tool call duration in milliseconds"

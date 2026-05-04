@@ -480,7 +480,7 @@ async fn test_api_health_returns_server_info() {
 #[tokio::test]
 async fn test_api_health_reports_lightrag_unreachable() {
     // LightRAG 不可达时，应当返回状态为 unreachable 而非 500
-    let config = build_test_config("http://127.0.0.1:1");  // 不可达端口
+    let config = build_test_config("http://127.0.0.1:1"); // 不可达端口
     let app = build_test_app(&config);
 
     let request = Request::builder()
@@ -703,7 +703,9 @@ async fn test_api_config_patch_requires_auth() {
         .method(Method::PATCH)
         .uri("/api/config")
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#))
+        .body(Body::from(
+            r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#,
+        ))
         .unwrap();
 
     let response = app.oneshot(request).await.unwrap();
@@ -724,7 +726,9 @@ async fn test_api_config_patch_rejects_token_without_config_write_scope() {
         .uri("/api/config")
         .header(header::AUTHORIZATION, "Bearer admin-token")
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#))
+        .body(Body::from(
+            r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#,
+        ))
         .unwrap();
 
     let response = app.oneshot(request).await.unwrap();
@@ -733,8 +737,8 @@ async fn test_api_config_patch_rejects_token_without_config_write_scope() {
 
 #[tokio::test]
 async fn test_api_config_patch_updates_defaults() {
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     // 创建临时配置文件
     let mut temp_file = NamedTempFile::new().unwrap();
@@ -780,7 +784,9 @@ response_type = "simple"
         .uri("/api/config")
         .header(header::AUTHORIZATION, "Bearer admin-token")
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#))
+        .body(Body::from(
+            r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#,
+        ))
         .unwrap();
 
     let response = app.oneshot(request).await.unwrap();
@@ -788,7 +794,10 @@ response_type = "simple"
 
     // 验证文件已更新
     let updated_content = std::fs::read_to_string(&config_path).unwrap();
-    assert!(updated_content.contains("top_k = 20"), "config file should be updated");
+    assert!(
+        updated_content.contains("top_k = 20"),
+        "config file should be updated"
+    );
 
     std::env::remove_var("CONFIG_PATH");
 }
@@ -808,7 +817,9 @@ async fn test_api_config_patch_rejects_invalid_config() {
         .uri("/api/config")
         .header(header::AUTHORIZATION, "Bearer admin-token")
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":2000,"response_type":"simple"}}"#))
+        .body(Body::from(
+            r#"{"defaults":{"query_mode":"hybrid","top_k":2000,"response_type":"simple"}}"#,
+        ))
         .unwrap();
 
     let response = app.oneshot(request).await.unwrap();
@@ -924,8 +935,8 @@ async fn test_api_tokens_post_rejects_without_token_write_scope() {
 
 #[tokio::test]
 async fn test_api_tokens_post_creates_token() {
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     let mut temp_file = NamedTempFile::new().unwrap();
     let config_content = r#"
@@ -1047,8 +1058,8 @@ async fn test_api_tokens_delete_rejects_without_token_write_scope() {
 
 #[tokio::test]
 async fn test_api_tokens_delete_removes_token() {
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     let mut temp_file = NamedTempFile::new().unwrap();
     let config_content = r#"
@@ -1197,13 +1208,25 @@ async fn test_api_audit_logs_returns_empty_when_no_logs() {
 
 #[tokio::test]
 async fn test_api_audit_logs_parses_and_returns_entries() {
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     let mut temp_file = NamedTempFile::new().unwrap();
-    writeln!(temp_file, "[2026-05-04T10:00:00Z] user=alice tool=rag_query params=test result=success").unwrap();
-    writeln!(temp_file, "[2026-05-04T10:01:00Z] user=bob tool=rag_insert params=data result=success").unwrap();
-    writeln!(temp_file, "[2026-05-04T10:02:00Z] user=alice tool=rag_query params=another result=success").unwrap();
+    writeln!(
+        temp_file,
+        "[2026-05-04T10:00:00Z] user=alice tool=rag_query params=test result=success"
+    )
+    .unwrap();
+    writeln!(
+        temp_file,
+        "[2026-05-04T10:01:00Z] user=bob tool=rag_insert params=data result=success"
+    )
+    .unwrap();
+    writeln!(
+        temp_file,
+        "[2026-05-04T10:02:00Z] user=alice tool=rag_query params=another result=success"
+    )
+    .unwrap();
     temp_file.flush().unwrap();
 
     let log_path = temp_file.path().to_str().unwrap().to_string();
@@ -1243,12 +1266,17 @@ async fn test_api_audit_logs_parses_and_returns_entries() {
 
 #[tokio::test]
 async fn test_api_audit_logs_supports_pagination() {
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     let mut temp_file = NamedTempFile::new().unwrap();
     for i in 1..=10 {
-        writeln!(temp_file, "[2026-05-04T10:00:{}Z] user=alice tool=rag_query params=test{} result=success", i, i).unwrap();
+        writeln!(
+            temp_file,
+            "[2026-05-04T10:00:{}Z] user=alice tool=rag_query params=test{} result=success",
+            i, i
+        )
+        .unwrap();
     }
     temp_file.flush().unwrap();
 
@@ -1291,13 +1319,25 @@ async fn test_api_audit_logs_supports_pagination() {
 
 #[tokio::test]
 async fn test_api_audit_logs_filters_by_user() {
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     let mut temp_file = NamedTempFile::new().unwrap();
-    writeln!(temp_file, "[2026-05-04T10:00:00Z] user=alice tool=rag_query params=test result=success").unwrap();
-    writeln!(temp_file, "[2026-05-04T10:01:00Z] user=bob tool=rag_insert params=data result=success").unwrap();
-    writeln!(temp_file, "[2026-05-04T10:02:00Z] user=alice tool=rag_query params=another result=success").unwrap();
+    writeln!(
+        temp_file,
+        "[2026-05-04T10:00:00Z] user=alice tool=rag_query params=test result=success"
+    )
+    .unwrap();
+    writeln!(
+        temp_file,
+        "[2026-05-04T10:01:00Z] user=bob tool=rag_insert params=data result=success"
+    )
+    .unwrap();
+    writeln!(
+        temp_file,
+        "[2026-05-04T10:02:00Z] user=alice tool=rag_query params=another result=success"
+    )
+    .unwrap();
     temp_file.flush().unwrap();
 
     let log_path = temp_file.path().to_str().unwrap().to_string();
@@ -1437,4 +1477,85 @@ async fn test_metrics_endpoint_accessible_without_auth() {
     let response = app.oneshot(request).await.unwrap();
     // metrics 端点不需要认证
     assert_eq!(response.status(), StatusCode::OK);
+}
+
+/// 辅助函数：从 app 抓取 /metrics 文本
+async fn fetch_metrics(app: axum::Router) -> String {
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/metrics")
+        .body(Body::empty())
+        .unwrap();
+    let response = app.oneshot(request).await.unwrap();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    String::from_utf8(body.to_vec()).unwrap()
+}
+
+#[tokio::test]
+async fn test_metrics_records_auth_failure_missing_header() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_test_app(&config);
+
+    // 不带 Authorization header 触发 missing_header
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/mcp")
+        .body(Body::empty())
+        .unwrap();
+    let response = app.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // 抓取 metrics，应包含 reason="missing_header"
+    let text = fetch_metrics(app).await;
+    assert!(
+        text.contains("reason=\"missing_header\""),
+        "metrics should contain missing_header reason, got: {}",
+        text
+    );
+}
+
+#[tokio::test]
+async fn test_metrics_records_auth_failure_invalid_format() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_test_app(&config);
+
+    // 错误的 Authorization 格式
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/mcp")
+        .header(header::AUTHORIZATION, "NotBearer token")
+        .body(Body::empty())
+        .unwrap();
+    let response = app.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    let text = fetch_metrics(app).await;
+    assert!(
+        text.contains("reason=\"invalid_format\""),
+        "metrics should contain invalid_format reason"
+    );
+}
+
+#[tokio::test]
+async fn test_metrics_records_auth_failure_invalid_token() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_test_app(&config);
+
+    // 不存在的 token
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/mcp")
+        .header(header::AUTHORIZATION, "Bearer nonexistent-token")
+        .body(Body::empty())
+        .unwrap();
+    let response = app.clone().oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    let text = fetch_metrics(app).await;
+    assert!(
+        text.contains("reason=\"invalid_token\""),
+        "metrics should contain invalid_token reason"
+    );
 }

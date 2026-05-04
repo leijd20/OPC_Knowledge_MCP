@@ -1,11 +1,11 @@
 # Task 4.3: 监控和指标
 
 **优先级**：🟢 低  
-**状态**：🔄 进行中（阶段 2 完成）  
+**状态**：✅ 完成  
 **Phase**：Phase 4 - 功能完善  
 **依赖**：无  
 **开始时间**：2026-05-04  
-**预计完成**：2026-05-04
+**完成时间**：2026-05-04
 
 ---
 
@@ -84,33 +84,25 @@
 
 ---
 
-### 🔄 阶段 3：集成测试扩展（待开始）
+### ✅ 阶段 3：集成测试扩展（已完成）
 
-**目标**：添加更多 metrics 相关的集成测试
+**完成内容**：
+1. ✅ `test_metrics_endpoint_returns_prometheus_format` - 验证 Prometheus 格式
+2. ✅ `test_metrics_endpoint_accessible_without_auth` - 验证无需认证
+3. ✅ `test_metrics_records_auth_failure_missing_header` - 缺少 header 计数
+4. ✅ `test_metrics_records_auth_failure_invalid_format` - 格式错误计数
+5. ✅ `test_metrics_records_auth_failure_invalid_token` - 无效 token 计数
 
-**测试场景**：
-1. ✅ `GET /metrics` 返回 200 OK
-2. ✅ 响应包含 Prometheus 格式指标
-3. ⬜ 工具调用后指标正确记录
-4. ⬜ 认证失败后指标正确记录
-
-**预计时间**：10 分钟
+**测试结果**：80 单元 + 64 集成 = 144 个测试全部通过（+5 新增）
 
 ---
 
-### ⬜ 阶段 4：监控文档（待开始）
+### ✅ 阶段 4：监控文档（已完成）
 
-**目标**：创建完整的监控指南
-
-**需要创建的文档**：
-- `docs/monitoring.md` - 监控指南
-  * 指标说明
-  * Prometheus 配置示例
-  * Grafana 面板配置
-  * 告警规则示例
-- 更新 `README.md` - 添加 `/metrics` 端点说明
-
-**预计时间**：20 分钟
+**完成内容**：
+- ✅ `docs/monitoring.md` - 完整监控指南（指标清单、Prometheus 配置、Grafana 查询、告警规则、故障排查）
+- ✅ `README.md` - 添加 `/metrics` 端点说明和监控特性
+- ✅ `docs/STATUS.md` - Task 4.3 标记为完成，Phase 4 完成度 100%
 
 ---
 
@@ -391,13 +383,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## 结束条件
 
-- [ ] `metrics.rs` 模块实现
-- [ ] 所有工具调用记录指标
-- [ ] 认证失败记录指标
-- [ ] `GET /metrics` 端点暴露
-- [ ] 单元测试：指标记录逻辑
-- [ ] 集成测试：metrics 端点和指标内容
-- [ ] 监控文档完成（Prometheus 配置、Grafana 面板）
+- [x] `metrics.rs` 模块实现
+- [x] 所有工具调用记录指标
+- [x] 认证失败记录指标
+- [x] `GET /metrics` 端点暴露
+- [x] 单元测试：指标记录逻辑
+- [x] 集成测试：metrics 端点和指标内容
+- [x] 监控文档完成（Prometheus 配置、Grafana 面板）
 
 ---
 

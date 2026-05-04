@@ -7,12 +7,12 @@
 - ✅ 项目骨架搭建完成
 - ✅ 核心业务逻辑实现
 - ✅ MCP 协议集成（rmcp v1.6.0 + Streamable HTTP）
-- ✅ 单元测试 80 个 + 集成测试 59 个
+- ✅ 单元测试 80 个 + 集成测试 64 个
 - ✅ 端到端测试脚本（需要 LightRAG 环境运行）
 - ✅ **管理 Web 界面（Task 4.1 完成）**
 - ✅ **Alpine.js 前端重构（Task 4.1.3 完成）**
 - ✅ **配置热重载（Task 4.2 完成）**
-- 🔄 **Prometheus 监控指标（Task 4.3 进行中 - Phase 1/4）**
+- ✅ **Prometheus 监控指标（Task 4.3 完成）**
 
 ## 模块状态
 
@@ -168,20 +168,16 @@
 - ✅ **Task 4.1**：管理 Web 界面（10 个 TDD 迭代）
 - ✅ **Task 4.1.3**：Alpine.js 前端重构（声明式 UI，组件化）
 - ✅ **Task 4.2**：配置热重载（auth.tokens + defaults 可热重载）
+- ✅ **Task 4.3**：Prometheus 监控指标（4 个 Phase 全部完成）
 
 ## 当前工作
 
-- 🔄 **Task 4.3**：Prometheus 监控指标（Phase 1/4 完成）
-  - ✅ Phase 1：Metrics 基础设施和工具集成
-  - ⬜ Phase 2：认证中间件集成 + /metrics 端点
-  - ⬜ Phase 3：集成测试
-  - ⬜ Phase 4：监控文档
+无进行中任务。
 
 ## 下一步工作
 
 参见 [tasks/README.md](../tasks/README.md)：
 
-- **Task 4.3**：完成 Prometheus 指标导出（剩余 ~55 分钟）
 - **Phase 5**：生产部署（Docker、CI/CD、监控告警）
 - **未来工作**：Token 过期机制、日志轮转等
 
@@ -261,14 +257,14 @@ f257282 - docs: confirm Task 4.1.3 completion status
 | Task 4.1 - 管理界面 | ✅ 完成 | 2026-05-04 |
 | Task 4.1.3 - Alpine.js 重构 | ✅ 完成 | 2026-05-04 |
 | Task 4.2 - 配置热重载 | ✅ 完成 | 2026-05-04 |
-| Task 4.3 - Prometheus 指标 | 🔄 进行中 | Phase 1/4 |
+| Task 4.3 - Prometheus 指标 | ✅ 完成 | 2026-05-04 |
 
-**完成度**：75%（3/4 任务完成）
+**完成度**：100%（4/4 任务完成）
 
 ---
 
-**项目可用性**：✅ 生产就绪的 MCP 服务器，带完整管理界面、配置热重载。
-**测试覆盖**：144 个测试全部通过（80 单元 + 59 集成 + 5 手动）。
+**项目可用性**：✅ 生产就绪的 MCP 服务器，带完整管理界面、配置热重载、Prometheus 监控。
+**测试覆盖**：144 个测试全部通过（80 单元 + 64 集成）。
 **管理界面**：✅ 完整的 Web UI（Alpine.js），支持配置、Token、审计日志管理。
 **配置热重载**：✅ auth.tokens 和 defaults 可热重载，无需重启服务器。
-**监控指标**：🔄 Prometheus 指标基础设施已搭建，待暴露 /metrics 端点。
+**监控指标**：✅ `/metrics` 端点暴露 Prometheus 格式指标，详见 [monitoring.md](monitoring.md)。

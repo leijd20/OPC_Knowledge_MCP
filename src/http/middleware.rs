@@ -24,18 +24,21 @@ pub async fn auth_middleware(
         })?;
 
     // 验证 Bearer token
-    let token = auth_header
-        .strip_prefix("Bearer ")
-        .ok_or_else(|| {
-            crate::metrics::record_auth_failure("invalid_format");
-            AppError::Auth("Invalid Authorization header format".to_string())
-        })?;
+    let token = auth_header.strip_prefix("Bearer ").ok_or_else(|| {
+        crate::metrics::record_auth_failure("invalid_format");
+        AppError::Auth("Invalid Authorization header format".to_string())
+    })?;
 
     // 验证 token（支持热重载）
-    let user = state.token_validator.read().await.validate(token).map_err(|e| {
-        crate::metrics::record_auth_failure("invalid_token");
-        e
-    })?;
+    let user = state
+        .token_validator
+        .read()
+        .await
+        .validate(token)
+        .map_err(|e| {
+            crate::metrics::record_auth_failure("invalid_token");
+            e
+        })?;
 
     // 将用户上下文存入 request extensions
     request.extensions_mut().insert(user);
@@ -99,13 +102,19 @@ mod tests {
             .ok_or_else(|| AppError::Auth("Missing Authorization header".to_string()));
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Missing Authorization header"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Missing Authorization header"));
     }
 
     #[test]
     fn test_extract_token_invalid_bearer_format() {
         let mut headers = axum::http::HeaderMap::new();
-        headers.insert(header::AUTHORIZATION, "InvalidFormat token".parse().unwrap());
+        headers.insert(
+            header::AUTHORIZATION,
+            "InvalidFormat token".parse().unwrap(),
+        );
 
         let auth_header = headers.get("Authorization").unwrap().to_str().unwrap();
         let result = auth_header
@@ -113,13 +122,19 @@ mod tests {
             .ok_or_else(|| AppError::Auth("Invalid Authorization header format".to_string()));
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid Authorization header format"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid Authorization header format"));
     }
 
     #[test]
     fn test_extract_token_valid_bearer() {
         let mut headers = axum::http::HeaderMap::new();
-        headers.insert(header::AUTHORIZATION, "Bearer valid-token-123".parse().unwrap());
+        headers.insert(
+            header::AUTHORIZATION,
+            "Bearer valid-token-123".parse().unwrap(),
+        );
 
         let auth_header = headers.get("Authorization").unwrap().to_str().unwrap();
         let result = auth_header.strip_prefix("Bearer ");
@@ -131,7 +146,11 @@ mod tests {
     #[tokio::test]
     async fn test_validate_token_with_state() {
         let state = create_test_state();
-        let result = state.token_validator.read().await.validate("valid-token-123");
+        let result = state
+            .token_validator
+            .read()
+            .await
+            .validate("valid-token-123");
 
         assert!(result.is_ok());
         let user = result.unwrap();

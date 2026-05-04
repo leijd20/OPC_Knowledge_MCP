@@ -39,12 +39,9 @@ pub fn build_app(shared_state: Arc<SharedState>, metrics_handle: PrometheusHandl
     // 仅 /mcp 路径需要 Bearer 认证；其他路径（如 /.well-known/*）自然 404，
     // 避免 MCP 客户端误以为支持 OAuth 而进入 OAuth 协商流程。
     // 使用 route_layer 而非 layer，以确保中间件只作用于已注册路由，未匹配路径直接 404。
-    let mcp_router = Router::new()
-        .nest_service("/mcp", mcp_service)
-        .route_layer(axum_middleware::from_fn_with_state(
-            app_state.clone(),
-            middleware::auth_middleware,
-        ));
+    let mcp_router = Router::new().nest_service("/mcp", mcp_service).route_layer(
+        axum_middleware::from_fn_with_state(app_state.clone(), middleware::auth_middleware),
+    );
 
     // 管理 API 路由（部分端点需要认证；router 内部按需挂载中间件）
     let api_router = crate::api::router(app_state.clone()).with_state(app_state.clone());
@@ -53,16 +50,26 @@ pub fn build_app(shared_state: Arc<SharedState>, metrics_handle: PrometheusHandl
         .merge(mcp_router)
         .nest("/api", api_router)
         // Metrics 端点（不需要认证）
-        .route("/metrics", get({
-            let handle = metrics_handle.clone();
-            move || async move { handle.render() }
-        }))
+        .route(
+            "/metrics",
+            get({
+                let handle = metrics_handle.clone();
+                move || async move { handle.render() }
+            }),
+        )
         // 静态文件 fallback：所有未匹配路由（除了 /mcp、/api、/metrics）走静态文件服务
         .fallback(static_files::serve_static)
         .layer(TraceLayer::new_for_http())
 }
 
-pub async fn serve(shared_state: Arc<SharedState>, host: String, port: u16, server_name: String, version: String, metrics_handle: PrometheusHandle) -> anyhow::Result<()> {
+pub async fn serve(
+    shared_state: Arc<SharedState>,
+    host: String,
+    port: u16,
+    server_name: String,
+    version: String,
+    metrics_handle: PrometheusHandle,
+) -> anyhow::Result<()> {
     let app = build_app(shared_state, metrics_handle);
 
     let addr = format!("{}:{}", host, port);
@@ -78,4 +85,3 @@ pub async fn serve(shared_state: Arc<SharedState>, host: String, port: u16, serv
 
     Ok(())
 }
-
