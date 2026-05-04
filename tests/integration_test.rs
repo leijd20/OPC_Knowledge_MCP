@@ -807,3 +807,317 @@ async fn test_api_config_patch_rejects_invalid_config() {
     let response = app.oneshot(request).await.unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
+
+// --- 迭代 5-7: Token 管理 API ---
+
+// 迭代 5: GET /api/tokens (需要 token:read scope)
+
+#[tokio::test]
+async fn test_api_tokens_get_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/tokens")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_tokens_get_rejects_without_token_read_scope() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/tokens")
+        .header(header::AUTHORIZATION, "Bearer alice-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_tokens_get_returns_masked_list() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("token:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/tokens")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    let tokens = json["tokens"].as_array().expect("tokens array");
+    assert!(tokens.len() >= 3); // alice, bob, admin
+
+    // 验证 token 被脱敏为预览格式（前4后2）
+    for token_obj in tokens {
+        let preview = token_obj["token_preview"].as_str().expect("token_preview");
+        assert!(preview.contains("..."), "token should be masked as preview");
+        assert!(preview.len() < 20, "preview should be short");
+    }
+}
+
+// 迭代 6: POST /api/tokens (需要 token:write scope)
+
+#[tokio::test]
+async fn test_api_tokens_post_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/api/tokens")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"name":"test","scopes":["rag:read"]}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_tokens_post_rejects_without_token_write_scope() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("token:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/api/tokens")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"name":"test","scopes":["rag:read"]}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_tokens_post_creates_token() {
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let config_content = r#"
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[mcp]
+server_name = "test-server"
+version = "1.0.0"
+
+[auth]
+audit_log_path = "./audit.log"
+
+[[auth.tokens]]
+name = "admin"
+token = "admin-token"
+scopes = ["rag:read", "rag:write", "rag:admin", "token:read", "token:write"]
+
+[lightrag]
+url = "http://localhost:9999"
+timeout_seconds = 30
+max_retries = 3
+retry_delay_seconds = 1
+
+[defaults]
+query_mode = "hybrid"
+top_k = 10
+response_type = "simple"
+"#;
+    writeln!(temp_file, "{}", config_content).unwrap();
+    let config_path = temp_file.path().to_str().unwrap().to_string();
+
+    std::env::set_var("CONFIG_PATH", &config_path);
+    let config = Config::load().unwrap();
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/api/tokens")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"name":"newuser","scopes":["rag:read"]}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    // 返回完整 token（仅此一次）
+    let token = json["token"].as_str().expect("token field");
+    assert!(token.len() == 64, "token should be 64 chars (32 bytes hex)");
+    assert_eq!(json["name"], "newuser");
+    assert_eq!(json["scopes"], serde_json::json!(["rag:read"]));
+
+    std::env::remove_var("CONFIG_PATH");
+}
+
+#[tokio::test]
+async fn test_api_tokens_post_rejects_duplicate_name() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("token:write".to_string());
+    }
+    let app = build_app(&config);
+
+    // 尝试创建已存在的 token name
+    let request = Request::builder()
+        .method(Method::POST)
+        .uri("/api/tokens")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"name":"alice","scopes":["rag:read"]}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+}
+
+// 迭代 7: DELETE /api/tokens/:name (需要 token:write scope)
+
+#[tokio::test]
+async fn test_api_tokens_delete_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::DELETE)
+        .uri("/api/tokens/alice")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_tokens_delete_rejects_without_token_write_scope() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("token:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::DELETE)
+        .uri("/api/tokens/alice")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_tokens_delete_removes_token() {
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let config_content = r#"
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[mcp]
+server_name = "test-server"
+version = "1.0.0"
+
+[auth]
+audit_log_path = "./audit.log"
+
+[[auth.tokens]]
+name = "admin"
+token = "admin-token"
+scopes = ["rag:read", "rag:write", "rag:admin", "token:write"]
+
+[[auth.tokens]]
+name = "victim"
+token = "victim-token"
+scopes = ["rag:read"]
+
+[lightrag]
+url = "http://localhost:9999"
+timeout_seconds = 30
+max_retries = 3
+retry_delay_seconds = 1
+
+[defaults]
+query_mode = "hybrid"
+top_k = 10
+response_type = "simple"
+"#;
+    writeln!(temp_file, "{}", config_content).unwrap();
+    let config_path = temp_file.path().to_str().unwrap().to_string();
+
+    std::env::set_var("CONFIG_PATH", &config_path);
+    let config = Config::load().unwrap();
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::DELETE)
+        .uri("/api/tokens/victim")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["status"], "ok");
+
+    std::env::remove_var("CONFIG_PATH");
+}
+
+#[tokio::test]
+async fn test_api_tokens_delete_returns_404_for_nonexistent() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("token:write".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::DELETE)
+        .uri("/api/tokens/nonexistent")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}

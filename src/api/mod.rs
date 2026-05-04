@@ -3,15 +3,16 @@
 //! 提供 Web 管理界面所需的 HTTP API：
 //! - `/api/health` - 服务器和 LightRAG 健康状态（无需认证）
 //! - `/api/stats` - 请求统计（需要 `stats:read`）
-//! - `/api/config` - 配置查看（需要 `config:read`）
-//! - `/api/tokens` - Token 管理（待实现）
+//! - `/api/config` - 配置查看和修改（需要 `config:read`/`config:write`）
+//! - `/api/tokens` - Token 管理（需要 `token:read`/`token:write`）
 //! - `/api/audit/logs` - 审计日志（待实现）
 
 pub mod config;
 pub mod health;
 pub mod stats;
+pub mod tokens;
 
-use axum::{middleware as axum_middleware, routing::get, routing::patch, Router};
+use axum::{middleware as axum_middleware, routing::get, routing::patch, routing::post, routing::delete, Router};
 use std::sync::Arc;
 
 use crate::http::{middleware::auth_middleware, AppState};
@@ -26,6 +27,8 @@ pub fn router(app_state: Arc<AppState>) -> Router<Arc<AppState>> {
     let protected = Router::new()
         .route("/stats", get(stats::get_stats))
         .route("/config", get(config::get_config).patch(config::patch_config))
+        .route("/tokens", get(tokens::list_tokens).post(tokens::create_token))
+        .route("/tokens/:name", delete(tokens::delete_token))
         .route_layer(axum_middleware::from_fn_with_state(
             app_state,
             auth_middleware,

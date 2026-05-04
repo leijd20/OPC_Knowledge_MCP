@@ -47,6 +47,9 @@ mime_guess = "2"
 # 随机数生成（用于 token 创建）
 rand = "0.8"
 
+# 编码
+hex = "0.4"
+
 [dev-dependencies]
 # 测试工具
 tokio-test = "0.4"
