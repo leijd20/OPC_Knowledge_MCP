@@ -4,62 +4,255 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PangenMCP Admin</title>
+    <script src="/tailwind.js"></script>
+    <script src="/lucide.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- Alpine.js v3.14 -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
+    <script defer src="/alpine.min.js"></script>
 </head>
-<body x-data="{ currentView: 'dashboard' }">
-    <div class="container">
-        <header>
-            <h1>PangenMCP Admin</h1>
-            <div>
-                <button @click="$store.auth.logout()" class="btn btn-logout">Logout</button>
+<body x-data="{ currentView: 'dashboard', mobileMenuOpen: false }">
+    <!-- Toast Notification Container -->
+    <div x-show="$store.toast.visible"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0 translate-y-2"
+         class="fixed top-4 right-4 z-50 max-w-sm w-full"
+         style="display: none;">
+        <div class="rounded-lg shadow-lg p-4 flex items-start gap-3"
+             :class="{
+                 'bg-green-50 border border-green-200': $store.toast.type === 'success',
+                 'bg-red-50 border border-red-200': $store.toast.type === 'error',
+                 'bg-blue-50 border border-blue-200': $store.toast.type === 'info',
+                 'bg-yellow-50 border border-yellow-200': $store.toast.type === 'warning'
+             }">
+            <div class="flex-shrink-0">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-600" x-show="$store.toast.type === 'success'"></i>
+                <i data-lucide="x-circle" class="w-5 h-5 text-red-600" x-show="$store.toast.type === 'error'"></i>
+                <i data-lucide="info" class="w-5 h-5 text-blue-600" x-show="$store.toast.type === 'info'"></i>
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600" x-show="$store.toast.type === 'warning'"></i>
             </div>
+            <div class="flex-1">
+                <p class="text-sm font-medium"
+                   :class="{
+                       'text-green-800': $store.toast.type === 'success',
+                       'text-red-800': $store.toast.type === 'error',
+                       'text-blue-800': $store.toast.type === 'info',
+                       'text-yellow-800': $store.toast.type === 'warning'
+                   }"
+                   x-text="$store.toast.message"></p>
+            </div>
+            <button @click="$store.toast.hide()" class="flex-shrink-0">
+                <i data-lucide="x" class="w-4 h-4 text-gray-400 hover:text-gray-600"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="bg-white rounded-xl shadow-md p-6 mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-100 p-2 rounded-lg">
+                    <i data-lucide="database" class="w-6 h-6 text-indigo-600"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">PangenMCP Admin</h1>
+            </div>
+            <button
+                @click="$store.auth.logout()"
+                class="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+            >
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Logout</span>
+            </button>
         </header>
 
-        <nav>
-            <button class="nav-btn" :class="{ 'active': currentView === 'dashboard' }" @click="currentView = 'dashboard'">Dashboard</button>
-            <button class="nav-btn" :class="{ 'active': currentView === 'config' }" @click="currentView = 'config'">Configuration</button>
-            <button class="nav-btn" :class="{ 'active': currentView === 'tokens' }" @click="currentView = 'tokens'">Tokens</button>
-            <button class="nav-btn" :class="{ 'active': currentView === 'audit' }" @click="currentView = 'audit'">Audit Logs</button>
+        <!-- Navigation -->
+        <nav class="bg-white rounded-xl shadow-md p-2 mb-6">
+            <!-- Mobile Menu Button -->
+            <div class="lg:hidden flex items-center justify-between p-2">
+                <span class="text-sm font-medium text-gray-700">Menu</span>
+                <button
+                    @click="mobileMenuOpen = !mobileMenuOpen"
+                    class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                    <i data-lucide="menu" class="w-5 h-5 text-gray-600" x-show="!mobileMenuOpen"></i>
+                    <i data-lucide="x" class="w-5 h-5 text-gray-600" x-show="mobileMenuOpen" style="display: none;"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div
+                class="flex flex-col lg:flex-row gap-2"
+                :class="{ 'hidden lg:flex': !mobileMenuOpen }"
+            >
+                <button
+                    @click="currentView = 'dashboard'; mobileMenuOpen = false"
+                    :class="currentView === 'dashboard' ? 'bg-indigo-500 text-white' : 'text-gray-700 hover:bg-gray-100'"
+                    class="flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 font-medium"
+                >
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button
+                    @click="currentView = 'config'; mobileMenuOpen = false"
+                    :class="currentView === 'config' ? 'bg-indigo-500 text-white' : 'text-gray-700 hover:bg-gray-100'"
+                    class="flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 font-medium"
+                >
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                    <span>Configuration</span>
+                </button>
+                <button
+                    @click="currentView = 'tokens'; mobileMenuOpen = false"
+                    :class="currentView === 'tokens' ? 'bg-indigo-500 text-white' : 'text-gray-700 hover:bg-gray-100'"
+                    class="flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 font-medium"
+                >
+                    <i data-lucide="key" class="w-5 h-5"></i>
+                    <span>Tokens</span>
+                </button>
+                <button
+                    @click="currentView = 'audit'; mobileMenuOpen = false"
+                    :class="currentView === 'audit' ? 'bg-indigo-500 text-white' : 'text-gray-700 hover:bg-gray-100'"
+                    class="flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 font-medium"
+                >
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span>Audit Logs</span>
+                </button>
+            </div>
         </nav>
 
         <main>
             <!-- Dashboard View -->
-            <div x-show="currentView === 'dashboard'" x-data="dashboard">
-                <section class="card">
-                    <h2>Server Health</h2>
-                    <div x-show="loading">Loading...</div>
-                    <div x-show="!loading && health">
-                        <div><strong>Server:</strong> <span :class="health?.server?.status === 'healthy' ? 'status-healthy' : 'status-error'" x-text="health?.server?.status"></span></div>
-                        <div><strong>Version:</strong> <span x-text="health?.server?.version"></span></div>
-                        <div><strong>LightRAG:</strong> <span :class="health?.lightrag?.status === 'healthy' ? 'status-healthy' : 'status-error'" x-text="health?.lightrag?.status"></span></div>
-                        <div><strong>LightRAG URL:</strong> <span x-text="health?.lightrag?.url"></span></div>
+            <div
+                x-show="currentView === 'dashboard'"
+                x-data="dashboard"
+            >
+                <!-- Server Health Card -->
+                <section class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="activity" class="w-6 h-6 text-indigo-600"></i>
+                            <h2 class="text-xl font-bold text-gray-900">Server Health</h2>
+                        </div>
+                        <button
+                            @click="loadDashboard(true)"
+                            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Refresh"
+                        >
+                            <i data-lucide="refresh-cw" class="w-5 h-5 text-gray-600" :class="{ 'animate-spin': refreshing }"></i>
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div x-show="loading" class="flex items-center justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Health Data -->
+                    <div x-show="!loading && health" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                            <i data-lucide="server" class="w-5 h-5 text-gray-600"></i>
+                            <div>
+                                <p class="text-sm text-gray-600">Server Status</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <i data-lucide="check-circle" class="w-4 h-4 text-green-600" x-show="health?.server?.status === 'healthy'"></i>
+                                    <i data-lucide="x-circle" class="w-4 h-4 text-red-600" x-show="health?.server?.status !== 'healthy'" style="display: none;"></i>
+                                    <span class="font-semibold" :class="health?.server?.status === 'healthy' ? 'text-green-600' : 'text-red-600'" x-text="health?.server?.status"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                            <i data-lucide="tag" class="w-5 h-5 text-gray-600"></i>
+                            <div>
+                                <p class="text-sm text-gray-600">Version</p>
+                                <p class="font-semibold text-gray-900 mt-1" x-text="health?.server?.version"></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                            <i data-lucide="zap" class="w-5 h-5 text-gray-600"></i>
+                            <div>
+                                <p class="text-sm text-gray-600">LightRAG Status</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <i data-lucide="check-circle" class="w-4 h-4 text-green-600" x-show="health?.lightrag?.status === 'healthy'"></i>
+                                    <i data-lucide="x-circle" class="w-4 h-4 text-red-600" x-show="health?.lightrag?.status !== 'healthy'" style="display: none;"></i>
+                                    <span class="font-semibold" :class="health?.lightrag?.status === 'healthy' ? 'text-green-600' : 'text-red-600'" x-text="health?.lightrag?.status"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                            <i data-lucide="link" class="w-5 h-5 text-gray-600"></i>
+                            <div>
+                                <p class="text-sm text-gray-600">LightRAG URL</p>
+                                <p class="font-mono text-sm text-gray-900 mt-1" x-text="health?.lightrag?.url"></p>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
-                <section class="card">
-                    <h2>Statistics</h2>
-                    <div x-show="loading">Loading...</div>
-                    <div x-show="!loading && stats">
-                        <div><strong>Total Requests:</strong> <span x-text="stats?.total_requests"></span></div>
-                        <div><strong>Total Errors:</strong> <span x-text="stats?.total_errors"></span></div>
-                        <div><strong>Uptime:</strong> <span x-text="formatUptime(stats?.uptime_seconds)"></span></div>
+                <!-- Statistics Card -->
+                <section class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="bar-chart-2" class="w-6 h-6 text-indigo-600"></i>
+                        <h2 class="text-xl font-bold text-gray-900">Statistics</h2>
+                    </div>
 
+                    <!-- Loading State -->
+                    <div x-show="loading" class="flex items-center justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Stats Data -->
+                    <div x-show="!loading && stats">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <p class="text-sm text-blue-600 font-medium">Total Requests</p>
+                                <p class="text-3xl font-bold text-blue-900 mt-2" x-text="stats?.total_requests"></p>
+                            </div>
+                            <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                                <p class="text-sm text-red-600 font-medium">Total Errors</p>
+                                <p class="text-3xl font-bold text-red-900 mt-2" x-text="stats?.total_errors"></p>
+                            </div>
+                            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <p class="text-sm text-green-600 font-medium">Uptime</p>
+                                <p class="text-3xl font-bold text-green-900 mt-2" x-text="formatUptime(stats?.uptime_seconds)"></p>
+                            </div>
+                        </div>
+
+                        <!-- By Tool Table -->
                         <template x-if="stats?.by_tool && Object.keys(stats.by_tool).length > 0">
                             <div>
-                                <h3>By Tool:</h3>
-                                <table>
-                                    <tr><th>Tool</th><th>Requests</th><th>Errors</th><th>Avg (ms)</th></tr>
-                                    <template x-for="[tool, data] in Object.entries(stats.by_tool)" :key="tool">
-                                        <tr>
-                                            <td x-text="tool"></td>
-                                            <td x-text="data.requests"></td>
-                                            <td x-text="data.errors"></td>
-                                            <td x-text="data.avg_duration_ms.toFixed(1)"></td>
-                                        </tr>
-                                    </template>
-                                </table>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">By Tool</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="bg-gray-100 border-b border-gray-200">
+                                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tool</th>
+                                                <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Requests</th>
+                                                <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Errors</th>
+                                                <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700">Avg (ms)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="[tool, data] in Object.entries(stats.by_tool)" :key="tool">
+                                                <tr class="border-b border-gray-100 hover:bg-indigo-50 transition-colors">
+                                                    <td class="px-4 py-3 text-sm text-gray-900 font-medium" x-text="tool"></td>
+                                                    <td class="px-4 py-3 text-sm text-gray-700 text-right" x-text="data.requests"></td>
+                                                    <td class="px-4 py-3 text-sm text-gray-700 text-right" x-text="data.errors"></td>
+                                                    <td class="px-4 py-3 text-sm text-gray-700 text-right" x-text="data.avg_duration_ms.toFixed(1)"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -67,122 +260,559 @@
             </div>
 
             <!-- Configuration View -->
-            <div x-show="currentView === 'config'" x-data="configuration">
-                <section class="card">
-                    <h2>Server Configuration</h2>
-                    <div x-show="loading">Loading...</div>
-                    <div x-show="!loading && config">
-                        <h3>Server</h3>
-                        <div><strong>Host:</strong> <span x-text="config?.server?.host"></span></div>
-                        <div><strong>Port:</strong> <span x-text="config?.server?.port"></span></div>
-                        <h3>LightRAG</h3>
-                        <div><strong>URL:</strong> <span x-text="config?.lightrag?.url"></span></div>
-                        <div><strong>Timeout:</strong> <span x-text="config?.lightrag?.timeout_seconds"></span>s</div>
-                        <h3>Defaults</h3>
-                        <div><strong>Query Mode:</strong> <span x-text="config?.defaults?.query_mode"></span></div>
-                        <div><strong>Top K:</strong> <span x-text="config?.defaults?.top_k"></span></div>
-                        <div><strong>Response Type:</strong> <span x-text="config?.defaults?.response_type"></span></div>
-                        <button @click="openEditModal" class="btn">Edit Configuration</button>
+            <div
+                x-show="currentView === 'config'"
+                x-data="configuration"
+            >
+                <section class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="settings" class="w-6 h-6 text-indigo-600"></i>
+                            <h2 class="text-xl font-bold text-gray-900">Server Configuration</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                @click="loadConfig(true)"
+                                class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                                title="Refresh"
+                            >
+                                <i data-lucide="refresh-cw" class="w-5 h-5 text-gray-600" :class="{ 'animate-spin': refreshing }"></i>
+                            </button>
+                            <button
+                                @click="openEditModal"
+                            x-show="!loading && config"
+                            class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                            <span>Edit</span>
+                        </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div x-show="loading" class="flex items-center justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Config Data -->
+                    <div x-show="!loading && config" class="space-y-6">
+                        <!-- Server Section -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="server" class="w-5 h-5 text-gray-600"></i>
+                                <h3 class="text-lg font-semibold text-gray-900">Server</h3>
+                            </div>
+                            <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">Host</dt>
+                                    <dd class="mt-1 text-base font-semibold text-gray-900" x-text="config?.server?.host"></dd>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">Port</dt>
+                                    <dd class="mt-1 text-base font-semibold text-gray-900" x-text="config?.server?.port"></dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <!-- LightRAG Section -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="zap" class="w-5 h-5 text-gray-600"></i>
+                                <h3 class="text-lg font-semibold text-gray-900">LightRAG</h3>
+                            </div>
+                            <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">URL</dt>
+                                    <dd class="mt-1 text-base font-mono text-gray-900" x-text="config?.lightrag?.url"></dd>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">Timeout</dt>
+                                    <dd class="mt-1 text-base font-semibold text-gray-900">
+                                        <span x-text="config?.lightrag?.timeout_seconds"></span>s
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <!-- Defaults Section -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="sliders" class="w-5 h-5 text-gray-600"></i>
+                                <h3 class="text-lg font-semibold text-gray-900">Defaults</h3>
+                            </div>
+                            <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">Query Mode</dt>
+                                    <dd class="mt-1 text-base font-semibold text-gray-900" x-text="config?.defaults?.query_mode"></dd>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">Top K</dt>
+                                    <dd class="mt-1 text-base font-semibold text-gray-900" x-text="config?.defaults?.top_k"></dd>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <dt class="text-sm font-medium text-gray-600">Response Type</dt>
+                                    <dd class="mt-1 text-base font-semibold text-gray-900" x-text="config?.defaults?.response_type"></dd>
+                                </div>
+                            </dl>
+                        </div>
                     </div>
                 </section>
 
                 <!-- Edit Config Modal -->
-                <div class="modal" :class="{ 'active': editing }">
-                    <div class="modal-content">
-                        <span class="close" @click="closeEditModal">&times;</span>
-                        <h2>Edit Configuration</h2>
-                        <form @submit.prevent="saveConfig">
-                            <h3>Defaults</h3>
-                            <label>Query Mode:
-                                <select x-model="form.query_mode">
+                <div
+                    x-show="editing"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                    style="display: none;"
+                    @click.self="closeEditModal"
+                >
+                    <div
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+                    >
+                        <button
+                            @click="closeEditModal"
+                            class="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                            <i data-lucide="x" class="w-5 h-5 text-gray-400 hover:text-gray-600"></i>
+                        </button>
+
+                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Edit Configuration</h2>
+
+                        <form @submit.prevent="saveConfig" class="space-y-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Defaults</h3>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Query Mode
+                                </label>
+                                <select
+                                    x-model="form.query_mode"
+                                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                >
                                     <option value="naive">Naive</option>
                                     <option value="local">Local</option>
                                     <option value="global">Global</option>
                                     <option value="hybrid">Hybrid</option>
                                 </select>
-                            </label>
-                            <label>Top K: <input type="number" x-model="form.top_k" min="1" max="1000" required></label>
-                            <label>Response Type: <input type="text" x-model="form.response_type" required></label>
-                            <button type="submit" class="btn">Save</button>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Top K
+                                </label>
+                                <input
+                                    type="number"
+                                    x-model="form.top_k"
+                                    min="1"
+                                    max="1000"
+                                    required
+                                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Response Type
+                                </label>
+                                <input
+                                    type="text"
+                                    x-model="form.response_type"
+                                    required
+                                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                >
+                            </div>
+
+                            <div class="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    @click="closeEditModal"
+                                    class="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95"
+                                >
+                                    Save
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
             </div>
 
             <!-- Tokens View -->
-            <div x-show="currentView === 'tokens'" x-data="tokens">
-                <section class="card">
-                    <h2>Access Tokens</h2>
-                    <button @click="openCreateModal" class="btn">Create New Token</button>
-                    <div x-show="loading">Loading...</div>
-                    <table x-show="!loading && tokens.length > 0">
-                        <tr><th>Name</th><th>Token Preview</th><th>Scopes</th><th>Actions</th></tr>
-                        <template x-for="token in tokens" :key="token.name">
-                            <tr>
-                                <td x-text="token.name"></td>
-                                <td><code x-text="token.token_preview"></code></td>
-                                <td x-text="token.scopes.join(', ')"></td>
-                                <td><button class="btn btn-danger" @click="deleteToken(token.name)">Delete</button></td>
-                            </tr>
-                        </template>
-                    </table>
+            <div
+                x-show="currentView === 'tokens'"
+                x-data="tokens"
+            >
+                <section class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="key" class="w-6 h-6 text-indigo-600"></i>
+                            <h2 class="text-xl font-bold text-gray-900">Access Tokens</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                @click="loadTokens(true)"
+                                class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                                title="Refresh"
+                            >
+                                <i data-lucide="refresh-cw" class="w-5 h-5 text-gray-600" :class="{ 'animate-spin': refreshing }"></i>
+                            </button>
+                            <button
+                                @click="openCreateModal"
+                                class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Create Token</span>
+                        </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div x-show="loading" class="flex items-center justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Tokens Table -->
+                    <div x-show="!loading && tokens.length > 0" class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-100 border-b border-gray-200">
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700" style="width: 20%;">Name</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700" style="width: 30%;">Token Preview</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700" style="width: 35%;">Scopes</th>
+                                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700" style="width: 15%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="token in tokens" :key="token.name">
+                                    <tr class="border-b border-gray-100 hover:bg-indigo-50 transition-colors">
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900" x-text="token.name"></td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-2">
+                                                <code class="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-700" x-text="token.token_preview"></code>
+                                                <button
+                                                    @click="copyToken(token.token_preview)"
+                                                    class="p-1 hover:bg-gray-200 rounded transition-colors"
+                                                    title="Copy token preview"
+                                                >
+                                                    <i data-lucide="copy" class="w-4 h-4 text-gray-600"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">
+                                            <div class="flex flex-wrap gap-1">
+                                                <template x-for="scope in token.scopes" :key="scope">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" x-text="scope"></span>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <button
+                                                @click="deleteToken(token.name)"
+                                                class="inline-flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-all active:scale-95"
+                                            >
+                                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="!loading && tokens.length === 0" class="text-center py-12">
+                        <i data-lucide="key" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                        <p class="text-gray-600">No tokens yet. Create one to get started.</p>
+                    </div>
                 </section>
 
                 <!-- Create Token Modal -->
-                <div class="modal" :class="{ 'active': creating }">
-                    <div class="modal-content">
-                        <span class="close" @click="closeCreateModal">&times;</span>
-                        <h2>Create New Token</h2>
-                        <form @submit.prevent="createToken" x-show="!newToken">
-                            <label>Name: <input type="text" x-model="form.name" required></label>
-                            <label>Scopes: <input type="text" x-model="form.scopes" placeholder="rag:read,rag:write" required></label>
-                            <button type="submit" class="btn">Create</button>
+                <div
+                    x-show="creating"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                    style="display: none;"
+                    @click.self="closeCreateModal"
+                >
+                    <div
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+                    >
+                        <button
+                            @click="closeCreateModal"
+                            class="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                            <i data-lucide="x" class="w-5 h-5 text-gray-400 hover:text-gray-600"></i>
+                        </button>
+
+                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Create New Token</h2>
+
+                        <!-- Create Form -->
+                        <form @submit.prevent="createToken" x-show="!newToken" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Token Name
+                                </label>
+                                <input
+                                    type="text"
+                                    x-model="form.name"
+                                    required
+                                    placeholder="e.g., my-app-token"
+                                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Scopes
+                                </label>
+                                <input
+                                    type="text"
+                                    x-model="form.scopes"
+                                    required
+                                    placeholder="rag:read,rag:write"
+                                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                >
+                                <p class="mt-1 text-xs text-gray-500">Comma-separated list of scopes</p>
+                            </div>
+
+                            <div class="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    @click="closeCreateModal"
+                                    class="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95"
+                                >
+                                    Create
+                                </button>
+                            </div>
                         </form>
-                        <div x-show="newToken">
-                            <p><strong>Token created!</strong></p>
-                            <p>Copy this token (shown only once):</p>
-                            <code x-text="newToken"></code>
+
+                        <!-- Success Message -->
+                        <div x-show="newToken" class="space-y-4" style="display: none;">
+                            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <p class="font-semibold text-yellow-900 mb-1">Token Created!</p>
+                                        <p class="text-sm text-yellow-800">Copy this token now. It won't be shown again.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative">
+                                <code class="block w-full p-3 bg-gray-100 rounded-lg font-mono text-sm text-gray-900 break-all" x-text="newToken"></code>
+                                <button
+                                    @click="copyNewToken()"
+                                    class="absolute top-2 right-2 p-2 bg-white hover:bg-gray-50 rounded-lg shadow-sm transition-colors"
+                                    title="Copy token"
+                                >
+                                    <i data-lucide="copy" class="w-4 h-4 text-gray-600"></i>
+                                </button>
+                            </div>
+
+                            <button
+                                @click="closeCreateModal"
+                                class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all"
+                            >
+                                Done
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Audit Logs View -->
-            <div x-show="currentView === 'audit'" x-data="auditLogs">
-                <section class="card">
-                    <h2>Audit Logs</h2>
-                    <div class="filters">
-                        <input type="text" x-model="filters.user" placeholder="Filter by user">
-                        <input type="text" x-model="filters.tool" placeholder="Filter by tool">
-                        <button @click="applyFilters" class="btn">Apply Filters</button>
+            <div
+                x-show="currentView === 'audit'"
+                x-data="auditLogs"
+            >
+                <section class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 p-6 mb-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="file-text" class="w-6 h-6 text-indigo-600"></i>
+                            <h2 class="text-xl font-bold text-gray-900">Audit Logs</h2>
+                        </div>
+                        <button
+                            @click="loadLogs(true)"
+                            class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            title="Refresh"
+                        >
+                            <i data-lucide="refresh-cw" class="w-5 h-5 text-gray-600" :class="{ 'animate-spin': refreshing }"></i>
+                        </button>
                     </div>
-                    <div x-show="loading">Loading...</div>
-                    <table x-show="!loading && logs.length > 0">
-                        <tr><th>Time</th><th>User</th><th>Tool</th><th>Params</th><th>Result</th></tr>
-                        <template x-for="log in logs" :key="log.timestamp">
-                            <tr>
-                                <td x-text="formatTime(log.timestamp)"></td>
-                                <td x-text="log.user"></td>
-                                <td x-text="log.tool"></td>
-                                <td x-text="log.params"></td>
-                                <td x-text="log.result"></td>
-                            </tr>
-                        </template>
-                    </table>
-                    <div class="pagination">
-                        <button @click="prevPage" :disabled="!canGoPrev" class="btn">Previous</button>
-                        <span>Page <span x-text="page"></span> (<span x-text="total"></span> total)</span>
-                        <button @click="nextPage" :disabled="!canGoNext" class="btn">Next</button>
+
+                    <!-- Filters -->
+                    <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                        <div class="flex-1 relative">
+                            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <input
+                                type="text"
+                                x-model="filters.user"
+                                placeholder="Filter by user"
+                                class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            >
+                        </div>
+                        <div class="flex-1 relative">
+                            <i data-lucide="tool" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <input
+                                type="text"
+                                x-model="filters.tool"
+                                placeholder="Filter by tool"
+                                class="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            >
+                        </div>
+                        <button
+                            @click="applyFilters"
+                            class="flex items-center justify-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <i data-lucide="filter" class="w-4 h-4"></i>
+                            <span>Apply</span>
+                        </button>
+                        <button
+                            @click="clearFilters"
+                            x-show="filters.user || filters.tool"
+                            class="flex items-center justify-center gap-2 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                        >
+                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            <span>Clear</span>
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div x-show="loading" class="flex items-center justify-center py-8">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Logs Table -->
+                    <div x-show="!loading && logs.length > 0" class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-100 border-b border-gray-200">
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap">Time</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">User</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tool</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Params</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="log in logs" :key="log.timestamp">
+                                    <tr class="border-b border-gray-100 hover:bg-indigo-50 transition-colors">
+                                        <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap" x-text="formatTime(log.timestamp)"></td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 font-medium" x-text="log.user"></td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="log.tool"></span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700 max-w-xs">
+                                            <div
+                                                class="truncate cursor-help"
+                                                :title="log.params"
+                                                x-text="log.params"
+                                            ></div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700 max-w-xs">
+                                            <div
+                                                class="truncate cursor-help"
+                                                :title="log.result"
+                                                x-text="log.result"
+                                            ></div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="!loading && logs.length === 0" class="text-center py-12">
+                        <i data-lucide="file-text" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
+                        <p class="text-gray-600">No audit logs found.</p>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div x-show="!loading && logs.length > 0" class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                        <button
+                            @click="prevPage"
+                            :disabled="!canGoPrev"
+                            class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            <span>Previous</span>
+                        </button>
+
+                        <span class="text-sm text-gray-600">
+                            Page <span class="font-semibold text-gray-900" x-text="page"></span>
+                            <span class="mx-1">·</span>
+                            <span x-text="total"></span> total logs
+                        </span>
+
+                        <button
+                            @click="nextPage"
+                            :disabled="!canGoNext"
+                            class="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                            <span>Next</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </section>
             </div>
         </main>
 
-        <footer>
+        <footer class="text-center py-6 text-sm text-gray-500">
             <p>PangenMCP v1.0</p>
         </footer>
     </div>
 
     <script src="app.js"></script>
+    <script>
+        document.addEventListener('alpine:initialized', () => {
+            lucide.createIcons();
+        });
+    </script>
 </body>
 </html>

@@ -4,100 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - PangenMCP Admin</title>
+    <script src="/tailwind.js"></script>
+    <script src="/lucide.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
-    <style>
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .login-box h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .login-box p {
-            text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
-
-        .login-form label {
-            display: block;
-            margin-bottom: 20px;
-        }
-
-        .login-form input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ecf0f1;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .login-form input:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-
-        .login-form button {
-            width: 100%;
-            padding: 12px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .login-form button:hover {
-            background: #2980b9;
-        }
-
-        .login-error {
-            background: #fee;
-            color: #c00;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-    </style>
+    <script defer src="/alpine.min.js"></script>
 </head>
-<body>
-    <div class="login-container" x-data="loginPage">
-        <div class="login-box">
-            <h1>PangenMCP Admin</h1>
-            <p>Enter your admin token to continue</p>
+<body class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+    <div x-data="loginPage" class="w-full max-w-md">
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+            <!-- Header with Icon -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+                    <i data-lucide="lock" class="w-8 h-8 text-indigo-600"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">PangenMCP Admin</h1>
+                <p class="text-gray-600">Enter your admin token to continue</p>
+            </div>
 
-            <div x-show="error" class="login-error" x-text="error"></div>
+            <!-- Error Message -->
+            <div x-show="error"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
+                 style="display: none;">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"></i>
+                <p class="text-sm text-red-800 flex-1" x-text="error"></p>
+            </div>
 
-            <form @submit.prevent="login" class="login-form">
-                <label>
-                    <strong>Admin Token</strong>
-                    <input type="password" x-model="token" placeholder="Enter your token" required autofocus>
-                </label>
-                <button type="submit" :disabled="loading">
-                    <span x-show="!loading">Login</span>
-                    <span x-show="loading">Verifying...</span>
+            <!-- Login Form -->
+            <form @submit.prevent="login" class="space-y-6">
+                <div>
+                    <label for="token" class="block text-sm font-medium text-gray-700 mb-2">
+                        Admin Token
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="key" class="w-5 h-5 text-gray-400"></i>
+                        </div>
+                        <input
+                            type="password"
+                            id="token"
+                            x-model="token"
+                            placeholder="Enter your token"
+                            required
+                            autofocus
+                            class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                        >
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    :disabled="loading"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+                >
+                    <template x-if="loading">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </template>
+                    <span x-text="loading ? 'Verifying...' : 'Login'"></span>
                 </button>
             </form>
+
+            <!-- Footer -->
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    Powered by PangenMCP v1.0
+                </p>
+            </div>
         </div>
     </div>
 
@@ -124,8 +102,7 @@
                     this.error = null;
 
                     try {
-                        // Verify token by calling /api/health (no auth required)
-                        // Then try /api/stats to verify token is valid
+                        // Verify token by calling /api/stats
                         const response = await fetch('/api/stats', {
                             headers: {
                                 'Authorization': `Bearer ${this.token}`
@@ -149,6 +126,11 @@
                     }
                 }
             }));
+        });
+
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
         });
     </script>
 </body>

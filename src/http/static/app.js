@@ -28,6 +28,54 @@ document.addEventListener('alpine:init', () => {
         }
     });
 
+    // Global Toast store
+    Alpine.store('toast', {
+        visible: false,
+        message: '',
+        type: 'info', // 'success', 'error', 'info', 'warning'
+        timeoutId: null,
+
+        show(message, type = 'info') {
+            // Clear existing timeout
+            if (this.timeoutId) {
+                clearTimeout(this.timeoutId);
+            }
+
+            this.message = message;
+            this.type = type;
+            this.visible = true;
+
+            // Auto-hide after 3 seconds
+            this.timeoutId = setTimeout(() => {
+                this.hide();
+            }, 3000);
+        },
+
+        hide() {
+            this.visible = false;
+            if (this.timeoutId) {
+                clearTimeout(this.timeoutId);
+                this.timeoutId = null;
+            }
+        },
+
+        success(message) {
+            this.show(message, 'success');
+        },
+
+        error(message) {
+            this.show(message, 'error');
+        },
+
+        info(message) {
+            this.show(message, 'info');
+        },
+
+        warning(message) {
+            this.show(message, 'warning');
+        }
+    });
+
     // API helper function
     window.apiCall = async function(endpoint, options = {}) {
         const headers = {
@@ -69,14 +117,25 @@ document.addEventListener('alpine:init', () => {
         health: null,
         stats: null,
         loading: true,
+        refreshing: false,
         error: null,
 
-        async init() {
-            await this.loadDashboard();
+        init() {
+            this.loadDashboard();
+            // Watch for view changes and reload data
+            this.$watch('$root.currentView', (value) => {
+                if (value === 'dashboard') {
+                    this.loadDashboard();
+                }
+            });
         },
 
-        async loadDashboard() {
-            this.loading = true;
+        async loadDashboard(isRefresh = false) {
+            if (isRefresh) {
+                this.refreshing = true;
+            } else {
+                this.loading = true;
+            }
             this.error = null;
 
             try {
@@ -91,6 +150,7 @@ document.addEventListener('alpine:init', () => {
                 this.error = err.message;
             } finally {
                 this.loading = false;
+                this.refreshing = false;
             }
         },
 
@@ -105,6 +165,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('configuration', () => ({
         config: null,
         loading: true,
+        refreshing: false,
         editing: false,
         form: {
             query_mode: '',
@@ -112,12 +173,22 @@ document.addEventListener('alpine:init', () => {
             response_type: ''
         },
 
-        async init() {
-            await this.loadConfig();
+        init() {
+            this.loadConfig();
+            // Watch for view changes and reload data
+            this.$watch('$root.currentView', (value) => {
+                if (value === 'config') {
+                    this.loadConfig();
+                }
+            });
         },
 
-        async loadConfig() {
-            this.loading = true;
+        async loadConfig(isRefresh = false) {
+            if (isRefresh) {
+                this.refreshing = true;
+            } else {
+                this.loading = true;
+            }
             try {
                 const data = await apiCall('/config');
                 if (data) {
@@ -127,6 +198,7 @@ document.addEventListener('alpine:init', () => {
                 console.error(err);
             } finally {
                 this.loading = false;
+                this.refreshing = false;
             }
         },
 
@@ -150,8 +222,9 @@ document.addEventListener('alpine:init', () => {
                 });
                 await this.loadConfig();
                 this.closeEditModal();
+                Alpine.store('toast').success('Configuration saved successfully');
             } catch (err) {
-                alert('Failed to save: ' + err.message);
+                Alpine.store('toast').error('Failed to save: ' + err.message);
             }
         }
     }));
@@ -162,6 +235,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('tokens', () => ({
         tokens: [],
         loading: true,
+        refreshing: false,
         creating: false,
         newToken: null,
         form: {
@@ -169,19 +243,31 @@ document.addEventListener('alpine:init', () => {
             scopes: ''
         },
 
-        async init() {
-            await this.loadTokens();
+        init() {
+            this.loadTokens();
+            // Watch for view changes and reload data
+            this.$watch('$root.currentView', (value) => {
+                if (value === 'tokens') {
+                    this.loadTokens();
+                }
+            });
         },
 
-        async loadTokens() {
-            this.loading = true;
+        async loadTokens(isRefresh = false) {
+            if (isRefresh) {
+                this.refreshing = true;
+            } else {
+                this.loading = true;
+            }
             try {
                 const data = await apiCall('/tokens');
                 if (data) this.tokens = data.tokens;
             } catch (err) {
                 console.error(err);
+                Alpine.store('toast').error('Failed to load tokens');
             } finally {
                 this.loading = false;
+                this.refreshing = false;
             }
         },
 
@@ -194,6 +280,7 @@ document.addEventListener('alpine:init', () => {
 
         closeCreateModal() {
             this.creating = false;
+            this.newToken = null;
         },
 
         async createToken() {
@@ -211,7 +298,7 @@ document.addEventListener('alpine:init', () => {
                     await this.loadTokens();
                 }
             } catch (err) {
-                alert('Failed to create: ' + err.message);
+                Alpine.store('toast').error('Failed to create token: ' + err.message);
             }
         },
 
@@ -221,9 +308,26 @@ document.addEventListener('alpine:init', () => {
             try {
                 await apiCall(`/tokens/${name}`, { method: 'DELETE' });
                 await this.loadTokens();
+                Alpine.store('toast').success('Token deleted successfully');
             } catch (err) {
-                alert('Failed to delete: ' + err.message);
+                Alpine.store('toast').error('Failed to delete token: ' + err.message);
             }
+        },
+
+        copyToken(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                Alpine.store('toast').success('Token preview copied to clipboard');
+            }).catch(() => {
+                Alpine.store('toast').error('Failed to copy to clipboard');
+            });
+        },
+
+        copyNewToken() {
+            navigator.clipboard.writeText(this.newToken).then(() => {
+                Alpine.store('toast').success('Token copied to clipboard');
+            }).catch(() => {
+                Alpine.store('toast').error('Failed to copy to clipboard');
+            });
         }
     }));
 });
@@ -236,17 +340,28 @@ document.addEventListener('alpine:init', () => {
         page: 1,
         pageSize: 20,
         loading: true,
+        refreshing: false,
         filters: {
             user: '',
             tool: ''
         },
 
-        async init() {
-            await this.loadLogs();
+        init() {
+            this.loadLogs();
+            // Watch for view changes and reload data
+            this.$watch('$root.currentView', (value) => {
+                if (value === 'audit') {
+                    this.loadLogs();
+                }
+            });
         },
 
-        async loadLogs() {
-            this.loading = true;
+        async loadLogs(isRefresh = false) {
+            if (isRefresh) {
+                this.refreshing = true;
+            } else {
+                this.loading = true;
+            }
             try {
                 const params = new URLSearchParams({
                     page: this.page,
@@ -265,10 +380,18 @@ document.addEventListener('alpine:init', () => {
                 console.error(err);
             } finally {
                 this.loading = false;
+                this.refreshing = false;
             }
         },
 
         applyFilters() {
+            this.page = 1;
+            this.loadLogs();
+        },
+
+        clearFilters() {
+            this.filters.user = '';
+            this.filters.tool = '';
             this.page = 1;
             this.loadLogs();
         },
