@@ -1,9 +1,94 @@
 # Task 4.3: 监控和指标
 
 **优先级**：🟢 低  
-**状态**：⬜ 未开始  
+**状态**：🔄 进行中（阶段 1 完成）  
 **Phase**：Phase 4 - 功能完善  
-**依赖**：无
+**依赖**：无  
+**开始时间**：2026-05-04  
+**预计完成**：2026-05-04
+
+---
+
+## 实施进度
+
+### ✅ 阶段 1：Metrics 基础设施和工具集成（已完成）
+
+**提交**：`2844aa2` - feat(metrics): add Prometheus metrics support - Phase 1 (WIP)
+
+**完成内容**：
+1. ✅ 添加依赖
+   - `metrics = "0.23"`
+   - `metrics-exporter-prometheus = "0.15"`
+
+2. ✅ 创建 `src/metrics.rs` 模块
+   - `init_metrics()` - 初始化 Prometheus 导出器
+   - `register_metrics()` - 注册指标描述
+   - `record_request()` - 记录工具调用（Counter）
+   - `record_duration()` - 记录请求耗时（Histogram）
+   - `set_lightrag_status()` - 设置 LightRAG 健康状态（Gauge）
+   - `record_auth_failure()` - 记录认证失败（Counter）
+
+3. ✅ 集成到 MCP 工具
+   - 添加 `record_tool_metrics()` 辅助方法
+   - 所有 4 个工具记录指标：
+     * `rag_query`
+     * `rag_insert`
+     * `rag_clear`
+     * `rag_health`
+
+4. ✅ 已实现的指标
+   - `mcp_requests_total{tool, user, status}` - 工具调用总数
+   - `mcp_request_duration_ms{tool}` - 请求耗时分布
+   - `lightrag_healthy` - LightRAG 健康状态
+   - `mcp_auth_failures_total{reason}` - 认证失败次数
+
+**测试结果**：80 个单元测试通过（+1 新增）
+
+---
+
+### 🔄 阶段 2：认证中间件集成 + /metrics 端点（待开始）
+
+**目标**：
+1. 在认证中间件中记录认证失败
+2. 暴露 `GET /metrics` 端点
+3. 在 main.rs 中初始化 metrics
+
+**需要修改的文件**：
+- `src/http/middleware.rs` - 添加 `record_auth_failure()` 调用
+- `src/http/mod.rs` - 添加 `/metrics` 路由
+- `src/main.rs` - 初始化 metrics 并传递 handle
+
+**预计时间**：20 分钟
+
+---
+
+### ⬜ 阶段 3：集成测试（待开始）
+
+**目标**：添加 `/metrics` 端点的集成测试
+
+**测试场景**：
+1. `GET /metrics` 返回 200 OK
+2. 响应包含 Prometheus 格式指标
+3. 工具调用后指标正确记录
+4. 认证失败后指标正确记录
+
+**预计时间**：15 分钟
+
+---
+
+### ⬜ 阶段 4：监控文档（待开始）
+
+**目标**：创建完整的监控指南
+
+**需要创建的文档**：
+- `docs/monitoring.md` - 监控指南
+  * 指标说明
+  * Prometheus 配置示例
+  * Grafana 面板配置
+  * 告警规则示例
+- 更新 `README.md` - 添加 `/metrics` 端点说明
+
+**预计时间**：20 分钟
 
 ---
 
