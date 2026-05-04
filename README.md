@@ -57,12 +57,14 @@ scopes = [
 
 ## 管理界面
 
+![alt text](docs/resource/image.png)
 访问 `http://localhost:8080`：
 
 - **Dashboard**：健康状态、请求统计
 - **Configuration**：查看和修改配置
 - **Tokens**：管理访问 token
 - **Audit Logs**：查看审计日志
+
 
 ## 配置热重载
 
