@@ -1,1 +1,121 @@
-<!DOCTYPE html><html><head><title>Admin UI</title></head><body><h1>PangenMCP Admin</h1></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PangenMCP Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PangenMCP Admin</h1>
+            <div id="auth-status"></div>
+        </header>
+
+        <nav>
+            <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+            <button class="nav-btn" data-view="config">Configuration</button>
+            <button class="nav-btn" data-view="tokens">Tokens</button>
+            <button class="nav-btn" data-view="audit">Audit Logs</button>
+        </nav>
+
+        <main id="content">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view active">
+                <section class="card">
+                    <h2>Server Health</h2>
+                    <div id="health-status">Loading...</div>
+                </section>
+
+                <section class="card">
+                    <h2>Statistics</h2>
+                    <div id="stats-display">Loading...</div>
+                </section>
+            </div>
+
+            <!-- Configuration View -->
+            <div id="config-view" class="view">
+                <section class="card">
+                    <h2>Server Configuration</h2>
+                    <div id="config-display">Loading...</div>
+                    <button id="edit-config-btn" class="btn">Edit Configuration</button>
+                </section>
+            </div>
+
+            <!-- Tokens View -->
+            <div id="tokens-view" class="view">
+                <section class="card">
+                    <h2>Access Tokens</h2>
+                    <button id="create-token-btn" class="btn">Create New Token</button>
+                    <div id="tokens-list">Loading...</div>
+                </section>
+            </div>
+
+            <!-- Audit Logs View -->
+            <div id="audit-view" class="view">
+                <section class="card">
+                    <h2>Audit Logs</h2>
+                    <div class="filters">
+                        <input type="text" id="filter-user" placeholder="Filter by user">
+                        <input type="text" id="filter-tool" placeholder="Filter by tool">
+                        <button id="apply-filters-btn" class="btn">Apply Filters</button>
+                    </div>
+                    <div id="audit-logs">Loading...</div>
+                    <div class="pagination">
+                        <button id="prev-page-btn" class="btn">Previous</button>
+                        <span id="page-info"></span>
+                        <button id="next-page-btn" class="btn">Next</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>PangenMCP v1.0</p>
+        </footer>
+    </div>
+
+    <!-- Modal for creating tokens -->
+    <div id="token-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Token</h2>
+            <form id="create-token-form">
+                <label>Name: <input type="text" id="token-name" required></label>
+                <label>Scopes: <input type="text" id="token-scopes" placeholder="rag:read,rag:write" required></label>
+                <button type="submit" class="btn">Create</button>
+            </form>
+            <div id="new-token-display" style="display:none;">
+                <p><strong>Token created!</strong></p>
+                <p>Copy this token (shown only once):</p>
+                <code id="new-token-value"></code>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing config -->
+    <div id="config-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Configuration</h2>
+            <form id="edit-config-form">
+                <h3>Defaults</h3>
+                <label>Query Mode:
+                    <select id="config-query-mode">
+                        <option value="naive">Naive</option>
+                        <option value="local">Local</option>
+                        <option value="global">Global</option>
+                        <option value="hybrid">Hybrid</option>
+                    </select>
+                </label>
+                <label>Top K: <input type="number" id="config-top-k" min="1" max="1000" required></label>
+                <label>Response Type: <input type="text" id="config-response-type" required></label>
+                <button type="submit" class="btn">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
