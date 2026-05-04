@@ -74,7 +74,11 @@
 > - 文件上传已移除（仅支持纯文本插入）
 > - 批量操作已移除（手动循环调用 `rag_insert` 即可）
 
-**任务详情**：见 [phase4-plan.md](phase4-plan.md)
+**任务详情**：
+- [Task 4.0: Phase 4 总览](task4-0-phase4-overview.md)
+- [Task 4.1: CORS 配置](task4-1-cors.md) ⬜
+- [Task 4.2: 配置热重载](task4-2-hot-reload.md) ⬜
+- [Task 4.3: 监控和指标](task4-3-metrics.md) ⬜
 
 **产出**：生产级功能（CORS、配置热重载、Prometheus metrics）
 
@@ -126,7 +130,11 @@
   - [task3-1-unit-tests.md](task3-1-unit-tests.md) ✅
   - [task3-2-integration-tests.md](task3-2-integration-tests.md) ✅
   - [task3-3-e2e-reposition.md](task3-3-e2e-reposition.md) ✅
-- Phase 4/5 任务：待规划
+- Phase 4 任务：⬜ 待开始
+  - [task4-0-phase4-overview.md](task4-0-phase4-overview.md)
+  - [task4-1-cors.md](task4-1-cors.md) ⬜
+  - [task4-2-hot-reload.md](task4-2-hot-reload.md) ⬜
+  - [task4-3-metrics.md](task4-3-metrics.md) ⬜
 
 ---
 

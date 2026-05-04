@@ -1,4 +1,4 @@
-# Phase 4: 功能完善
+# Phase 4: 功能完善 - 总览
 
 **时间**：2026-05-04 ~ 待定  
 **状态**：⬜ 未开始  
@@ -19,7 +19,63 @@
 
 ## 任务列表
 
-### Task 4.1: CORS 配置 🟡 中优先级
+| 任务 | 内容 | 估时 | 优先级 | 文档 |
+|------|------|------|--------|------|
+| **Task 4.1** | **CORS 配置** | 1-2h | 🟡 中 | [task4-1-cors.md](task4-1-cors.md) |
+| **Task 4.2** | **配置热重载** | 3-4h | 🟢 低 | [task4-2-hot-reload.md](task4-2-hot-reload.md) |
+| **Task 4.3** | **监控和指标** | 4-5h | 🟢 低 | [task4-3-metrics.md](task4-3-metrics.md) |
+
+**总估时**：8-11 小时
+
+---
+
+## 推荐顺序
+
+1. **Task 4.1 CORS** — 如果用户需要 Web 客户端，这是阻塞项；实现简单，快速交付
+2. **Task 4.2 配置热重载** — 提升运维体验，但非必需
+3. **Task 4.3 监控指标** — 生产环境重要，但开发/测试阶段可暂缓
+
+---
+
+## Phase 4 结束条件
+
+- [ ] Task 4.1 完成：CORS 配置可用
+- [ ] Task 4.2 完成：配置热重载可用
+- [ ] Task 4.3 完成：Prometheus metrics 暴露
+- [ ] 所有新功能有单元测试和集成测试
+- [ ] 文档更新完成
+- [ ] 手动验证所有功能
+
+---
+
+## 文档更新同步
+
+完成后需同步更新：
+- `tasks/README.md` — 标记 Phase 4 完成
+- `docs/STATUS.md` — 更新各模块实现状态
+- `README.md` — 添加 CORS、热重载、监控的使用说明
+- `config.example.toml` — 添加新配置项示例
+
+---
+
+## 备注
+
+**Phase 4 vs Phase 5 的区别**：
+- **Phase 4**：功能增强（CORS、热重载、监控）
+- **Phase 5**：部署工程化（Docker、CI/CD、HTTPS）
+
+Phase 4 完成后，服务已具备生产级功能，但部署方式仍需手动。Phase 5 将自动化部署流程。
+
+---
+
+## 已移除的功能
+
+以下功能已从 Phase 4 移除，决策记录见 `docs/decisions/`：
+
+- ❌ **流式查询** — MCP 协议不支持流式工具响应（[no-streaming-query.md](../docs/decisions/no-streaming-query.md)）
+- ❌ **文件上传** — 项目定位为纯文本插入（[no-file-upload-batch.md](../docs/decisions/no-file-upload-batch.md)）
+- ❌ **批量操作** — 手动循环调用即可（[no-file-upload-batch.md](../docs/decisions/no-file-upload-batch.md)）
+
 
 **时间估计**：1-2 小时  
 **依赖**：无
