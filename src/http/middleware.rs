@@ -6,6 +6,7 @@ use axum::{
     response::Response,
 };
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 pub async fn auth_middleware(
     State(state): State<Arc<AppState>>,
@@ -24,8 +25,8 @@ pub async fn auth_middleware(
         .strip_prefix("Bearer ")
         .ok_or_else(|| AppError::Auth("Invalid Authorization header format".to_string()))?;
 
-    // 验证 token
-    let user = state.token_validator.validate(token)?;
+    // 验证 token（支持热重载）
+    let user = state.token_validator.read().await.validate(token)?;
 
     // 将用户上下文存入 request extensions
     request.extensions_mut().insert(user);
@@ -75,7 +76,7 @@ mod tests {
         };
 
         Arc::new(AppState {
-            token_validator: TokenValidator::new(&auth_config),
+            token_validator: Arc::new(RwLock::new(TokenValidator::new(&auth_config))),
             shared: Arc::new(crate::mcp::SharedState::new(&config)),
         })
     }
@@ -118,10 +119,10 @@ mod tests {
         assert_eq!(result.unwrap(), "valid-token-123");
     }
 
-    #[test]
-    fn test_validate_token_with_state() {
+    #[tokio::test]
+    async fn test_validate_token_with_state() {
         let state = create_test_state();
-        let result = state.token_validator.validate("valid-token-123");
+        let result = state.token_validator.read().await.validate("valid-token-123");
 
         assert!(result.is_ok());
         let user = result.unwrap();
@@ -129,19 +130,19 @@ mod tests {
         assert_eq!(user.scopes, vec!["rag:read"]);
     }
 
-    #[test]
-    fn test_validate_invalid_token_with_state() {
+    #[tokio::test]
+    async fn test_validate_invalid_token_with_state() {
         let state = create_test_state();
-        let result = state.token_validator.validate("invalid-token");
+        let result = state.token_validator.read().await.validate("invalid-token");
 
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Invalid token"));
     }
 
-    #[test]
-    fn test_validate_empty_token_with_state() {
+    #[tokio::test]
+    async fn test_validate_empty_token_with_state() {
         let state = create_test_state();
-        let result = state.token_validator.validate("");
+        let result = state.token_validator.read().await.validate("");
 
         assert!(result.is_err());
     }

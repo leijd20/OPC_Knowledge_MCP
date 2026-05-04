@@ -7,10 +7,12 @@ use crate::mcp::{McpServer, SharedState};
 use axum::{middleware as axum_middleware, Router};
 use rmcp::transport::StreamableHttpService;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::trace::TraceLayer;
 
 pub struct AppState {
-    pub token_validator: TokenValidator,
+    /// Token 验证器（支持热重载）
+    pub token_validator: Arc<RwLock<TokenValidator>>,
     /// 共享状态（API handler 通过此访问 rag_client、stats、config 等）
     pub shared: Arc<SharedState>,
 }
