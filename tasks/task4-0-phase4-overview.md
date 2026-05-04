@@ -21,19 +21,19 @@
 
 | 任务 | 内容 | 估时 | 优先级 | 文档 |
 |------|------|------|--------|------|
-| **Task 4.1** | **CORS 配置** | 1-2h | 🟡 中 | [task4-1-cors.md](task4-1-cors.md) |
-| **Task 4.2** | **配置热重载** | 3-4h | 🟢 低 | [task4-2-hot-reload.md](task4-2-hot-reload.md) |
+| **Task 4.1** | **管理界面** | 8-12h | 🔴 高 | [task4-1-admin-ui.md](task4-1-admin-ui.md) |
+| **Task 4.2** | **配置热重载** | 3-4h | 🟡 中 | [task4-2-hot-reload.md](task4-2-hot-reload.md) |
 | **Task 4.3** | **监控和指标** | 4-5h | 🟢 低 | [task4-3-metrics.md](task4-3-metrics.md) |
 
-**总估时**：8-11 小时
+**总估时**：15-21 小时
 
 ---
 
 ## 推荐顺序
 
-1. **Task 4.1 CORS** — 如果用户需要 Web 客户端，这是阻塞项；实现简单，快速交付
-2. **Task 4.2 配置热重载** — 提升运维体验，但非必需
-3. **Task 4.3 监控指标** — 生产环境重要，但开发/测试阶段可暂缓
+1. **Task 4.1 管理界面** — 用户明确需求，包含配置修改、Token 管理、审计日志、系统监控
+2. **Task 4.2 配置热重载** — 管理界面修改配置后自动生效
+3. **Task 4.3 监控指标** — 可选，与管理界面的统计功能互补
 
 ---
 
@@ -75,6 +75,7 @@ Phase 4 完成后，服务已具备生产级功能，但部署方式仍需手动
 - ❌ **流式查询** — MCP 协议不支持流式工具响应（[no-streaming-query.md](../docs/decisions/no-streaming-query.md)）
 - ❌ **文件上传** — 项目定位为纯文本插入（[no-file-upload-batch.md](../docs/decisions/no-file-upload-batch.md)）
 - ❌ **批量操作** — 手动循环调用即可（[no-file-upload-batch.md](../docs/decisions/no-file-upload-batch.md)）
+- ❌ **CORS 配置** — 管理界面嵌入同一服务器，无需跨域支持
 
 
 **时间估计**：1-2 小时  
