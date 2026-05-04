@@ -1,11 +1,12 @@
 //! GET /api/config - 配置查看（需要 config:read scope）
+//! PATCH /api/config - 配置修改（需要 config:write scope）
 
 use axum::{
     extract::{Extension, State},
     http::StatusCode,
     Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::auth::UserContext;
@@ -68,6 +69,54 @@ fn mask_config(config: &Config) -> MaskedConfig {
         lightrag: config.lightrag.clone(),
         defaults: config.defaults.clone(),
     }
+}
+
+/// 部分配置更新请求（所有字段可选）
+#[derive(Debug, Deserialize)]
+pub struct ConfigPatch {
+    pub server: Option<ServerConfig>,
+    pub lightrag: Option<LightRagConfig>,
+    pub defaults: Option<DefaultsConfig>,
+    // auth 和 mcp 不允许通过 PATCH 修改（用专门的 token API）
+}
+
+pub async fn patch_config(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<UserContext>,
+    Json(patch): Json<ConfigPatch>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if !user.scopes.iter().any(|s| s == "config:write") {
+        return Err((StatusCode::FORBIDDEN, "Missing config:write scope".to_string()));
+    }
+
+    // 读取当前配置
+    let mut config = state.shared.config.write().await;
+
+    // 应用部分更新
+    if let Some(server) = patch.server {
+        config.server = server;
+    }
+    if let Some(lightrag) = patch.lightrag {
+        config.lightrag = lightrag;
+    }
+    if let Some(defaults) = patch.defaults {
+        config.defaults = defaults;
+    }
+
+    // 验证新配置
+    if let Err(e) = config.validate() {
+        return Err((StatusCode::BAD_REQUEST, format!("Invalid config: {}", e)));
+    }
+
+    // 写入文件
+    if let Err(e) = config.save(&state.shared.config_path) {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save config: {}", e)));
+    }
+
+    Ok(Json(serde_json::json!({
+        "status": "ok",
+        "message": "Configuration updated"
+    })))
 }
 
 #[cfg(test)]

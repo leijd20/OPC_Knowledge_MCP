@@ -26,10 +26,16 @@ pub struct SharedState {
     pub stats: Arc<RwLock<StatsCollector>>,
     /// 当前完整配置（用于管理 API 读取/修改）
     pub config: Arc<RwLock<Config>>,
+    /// config.toml 路径（用于持久化修改）
+    pub config_path: String,
 }
 
 impl SharedState {
     pub fn new(config: &Config) -> Self {
+        Self::new_with_path(config, std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string()))
+    }
+
+    pub fn new_with_path(config: &Config, config_path: String) -> Self {
         Self {
             rag_client: LightRagClient::new(&config.lightrag),
             token_validator: TokenValidator::new(&config.auth),
@@ -38,6 +44,7 @@ impl SharedState {
             mcp_config: config.mcp.clone(),
             stats: Arc::new(RwLock::new(StatsCollector::new())),
             config: Arc::new(RwLock::new(config.clone())),
+            config_path,
         }
     }
 }

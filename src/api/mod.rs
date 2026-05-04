@@ -11,7 +11,7 @@ pub mod config;
 pub mod health;
 pub mod stats;
 
-use axum::{middleware as axum_middleware, routing::get, Router};
+use axum::{middleware as axum_middleware, routing::get, routing::patch, Router};
 use std::sync::Arc;
 
 use crate::http::{middleware::auth_middleware, AppState};
@@ -25,7 +25,7 @@ pub fn router(app_state: Arc<AppState>) -> Router<Arc<AppState>> {
     // 受保护的路由（需要 Bearer Token）
     let protected = Router::new()
         .route("/stats", get(stats::get_stats))
-        .route("/config", get(config::get_config))
+        .route("/config", get(config::get_config).patch(config::patch_config))
         .route_layer(axum_middleware::from_fn_with_state(
             app_state,
             auth_middleware,

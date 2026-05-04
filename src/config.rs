@@ -71,7 +71,14 @@ impl Config {
         Ok(config)
     }
 
-    fn validate(&self) -> anyhow::Result<()> {
+    /// 将配置序列化为 TOML 并写入指定路径
+    pub fn save(&self, path: &str) -> anyhow::Result<()> {
+        let content = toml::to_string_pretty(self)?;
+        std::fs::write(path, content)?;
+        Ok(())
+    }
+
+    pub fn validate(&self) -> anyhow::Result<()> {
         // LightRAG URL 格式
         let url = &self.lightrag.url;
         if !url.starts_with("http://") && !url.starts_with("https://") {

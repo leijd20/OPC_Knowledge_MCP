@@ -684,3 +684,126 @@ async fn test_api_config_returns_complete_structure() {
     assert_eq!(json["defaults"]["query_mode"], "hybrid");
     assert_eq!(json["defaults"]["top_k"], 10);
 }
+
+// --- 迭代 4: PATCH /api/config (需要 config:write scope) ---
+
+#[tokio::test]
+async fn test_api_config_patch_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::PATCH)
+        .uri("/api/config")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_config_patch_rejects_token_without_config_write_scope() {
+    let mut config = build_test_config("http://localhost:9999");
+    // admin 只有 config:read，没有 config:write
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("config:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::PATCH)
+        .uri("/api/config")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_config_patch_updates_defaults() {
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+
+    // 创建临时配置文件
+    let mut temp_file = NamedTempFile::new().unwrap();
+    let config_content = r#"
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[mcp]
+server_name = "test-server"
+version = "1.0.0"
+
+[auth]
+audit_log_path = "./audit.log"
+
+[[auth.tokens]]
+name = "admin"
+token = "admin-token"
+scopes = ["rag:read", "rag:write", "rag:admin", "config:read", "config:write"]
+
+[lightrag]
+url = "http://localhost:9999"
+timeout_seconds = 30
+max_retries = 3
+retry_delay_seconds = 1
+
+[defaults]
+query_mode = "hybrid"
+top_k = 10
+response_type = "simple"
+"#;
+    writeln!(temp_file, "{}", config_content).unwrap();
+    let config_path = temp_file.path().to_str().unwrap().to_string();
+
+    // 加载配置并构建 app
+    std::env::set_var("CONFIG_PATH", &config_path);
+    let config = Config::load().unwrap();
+    let app = build_app(&config);
+
+    // PATCH 请求修改 top_k
+    let request = Request::builder()
+        .method(Method::PATCH)
+        .uri("/api/config")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":20,"response_type":"simple"}}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // 验证文件已更新
+    let updated_content = std::fs::read_to_string(&config_path).unwrap();
+    assert!(updated_content.contains("top_k = 20"), "config file should be updated");
+
+    std::env::remove_var("CONFIG_PATH");
+}
+
+#[tokio::test]
+async fn test_api_config_patch_rejects_invalid_config() {
+    let mut config = build_test_config("http://localhost:9999");
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("config:read".to_string());
+        admin.scopes.push("config:write".to_string());
+    }
+    let app = build_app(&config);
+
+    // 尝试设置无效的 top_k（超出范围）
+    let request = Request::builder()
+        .method(Method::PATCH)
+        .uri("/api/config")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(r#"{"defaults":{"query_mode":"hybrid","top_k":2000,"response_type":"simple"}}"#))
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
