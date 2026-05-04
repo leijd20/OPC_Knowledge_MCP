@@ -1,15 +1,18 @@
 # 项目开发状态
 
-> 最后更新：2026-05-04
+> 最后更新：2026-05-04 18:00
 
 ## 总体进度
 
 - ✅ 项目骨架搭建完成
 - ✅ 核心业务逻辑实现
 - ✅ MCP 协议集成（rmcp v1.6.0 + Streamable HTTP）
-- ✅ 单元测试 77 个 + 集成测试 59 个
+- ✅ 单元测试 80 个 + 集成测试 59 个
 - ✅ 端到端测试脚本（需要 LightRAG 环境运行）
 - ✅ **管理 Web 界面（Task 4.1 完成）**
+- ✅ **Alpine.js 前端重构（Task 4.1.3 完成）**
+- ✅ **配置热重载（Task 4.2 完成）**
+- 🔄 **Prometheus 监控指标（Task 4.3 进行中 - Phase 1/4）**
 
 ## 模块状态
 
@@ -150,27 +153,122 @@
 | rust-embed | 8 | 静态文件嵌入 |
 | rand | 0.8 | Token 生成 |
 | hex | 0.4 | Token 编码 |
+| notify | 6.1 | 文件监听（配置热重载）|
+| metrics | 0.23 | Prometheus 指标 |
+| metrics-exporter-prometheus | 0.15 | Prometheus 导出器 |
 
 ## 已完成任务
 
 - ✅ **Task 2.1**：rmcp 集成（Streamable HTTP）
 - ✅ **Task 2.2**：配置改进（环境变量、验证）
 - ✅ **Task 2.3**：E2E 测试脚本
-- ✅ **Task 3.1**：单元测试（67 → 77 个）
+- ✅ **Task 3.1**：单元测试（67 → 77 → 80 个）
 - ✅ **Task 3.2**：集成测试（24 → 59 个）
 - ✅ **Task 3.3**：E2E 测试重新定位
 - ✅ **Task 4.1**：管理 Web 界面（10 个 TDD 迭代）
+- ✅ **Task 4.1.3**：Alpine.js 前端重构（声明式 UI，组件化）
+- ✅ **Task 4.2**：配置热重载（auth.tokens + defaults 可热重载）
+
+## 当前工作
+
+- 🔄 **Task 4.3**：Prometheus 监控指标（Phase 1/4 完成）
+  - ✅ Phase 1：Metrics 基础设施和工具集成
+  - ⬜ Phase 2：认证中间件集成 + /metrics 端点
+  - ⬜ Phase 3：集成测试
+  - ⬜ Phase 4：监控文档
 
 ## 下一步工作
 
 参见 [tasks/README.md](../tasks/README.md)：
 
-- **Task 4.2**：配置热重载（监听 config.toml 变化）
-- **Task 4.3**：Prometheus 指标导出
-- **未来工作**：Token 过期机制、CORS 配置、日志轮转、Docker 容器化等
+- **Task 4.3**：完成 Prometheus 指标导出（剩余 ~55 分钟）
+- **Phase 5**：生产部署（Docker、CI/CD、监控告警）
+- **未来工作**：Token 过期机制、日志轮转等
 
 ---
 
-**项目可用性**：✅ 生产就绪的 MCP 服务器，带完整管理界面。
-**测试覆盖**：136 个测试全部通过（77 单元 + 59 集成）。
-**管理界面**：✅ 完整的 Web UI，支持配置、Token、审计日志管理。
+## 最新开发会话（2026-05-04）
+
+### 完成内容
+
+**Task 4.2: 配置热重载（✅ 完成）**
+- 4 个提交（94ceb00, 9908a06, 4b68eb0, 4d5d0c6）
+- ConfigWatcher 文件监听（notify 库）
+- SharedState RwLock 重构（支持并发读写）
+- Token 和 Defaults 热重载（1-2 秒生效）
+- 138 个测试全部通过
+- 手动测试 5/5 场景通过
+
+**Task 4.3: 监控和指标（🔄 Phase 1/4）**
+- 1 个提交（2844aa2）
+- 添加 metrics 依赖
+- 创建 src/metrics.rs 模块
+- 所有 4 个 MCP 工具记录指标
+- 80 个单元测试通过
+
+**Task 4.1.3: 状态确认（✅ 已完成）**
+- 确认之前会话已完成（提交 05f2af0）
+- 更新任务文档状态
+- Alpine.js v3.14 集成
+- 独立登录页面
+- 登出功能
+
+### 技术亮点
+
+**配置热重载架构**：
+```
+config.toml → notify → ConfigWatcher → watch channel → 
+main.rs 后台任务 → RwLock::write → SharedState → 
+RwLock::read → 工具方法 & 中间件
+```
+
+**Prometheus 指标**：
+- `mcp_requests_total{tool, user, status}` - Counter
+- `mcp_request_duration_ms{tool}` - Histogram
+- `lightrag_healthy` - Gauge
+- `mcp_auth_failures_total{reason}` - Counter
+
+### 测试统计
+
+| 测试类型 | 数量 | 状态 |
+|---------|------|------|
+| 单元测试 | 80 | ✅ 全部通过 |
+| 集成测试 | 59 | ✅ 全部通过 |
+| 手动测试 | 5 | ✅ 全部通过 |
+| **总计** | **144** | **✅ 100%** |
+
+### Git 提交历史
+
+```bash
+# Task 4.2: 配置热重载
+94ceb00 - feat(config): add ConfigWatcher for hot reload - Phase 1
+9908a06 - feat(config): complete SharedState RwLock refactor - Phase 2
+4b68eb0 - feat(config): integrate hot reload into main.rs - Phase 3
+4d5d0c6 - docs: complete Task 4.2 documentation
+
+# Task 4.3: 监控和指标
+2844aa2 - feat(metrics): add Prometheus metrics support - Phase 1 (WIP)
+
+# 文档更新
+bc4e66e - docs: update task status and create session summary
+f257282 - docs: confirm Task 4.1.3 completion status
+```
+
+### Phase 4 完成度
+
+| 任务 | 状态 | 完成时间 |
+|------|------|---------|
+| Task 4.1 - 管理界面 | ✅ 完成 | 2026-05-04 |
+| Task 4.1.3 - Alpine.js 重构 | ✅ 完成 | 2026-05-04 |
+| Task 4.2 - 配置热重载 | ✅ 完成 | 2026-05-04 |
+| Task 4.3 - Prometheus 指标 | 🔄 进行中 | Phase 1/4 |
+
+**完成度**：75%（3/4 任务完成）
+
+---
+
+**项目可用性**：✅ 生产就绪的 MCP 服务器，带完整管理界面、配置热重载。
+**测试覆盖**：144 个测试全部通过（80 单元 + 59 集成 + 5 手动）。
+**管理界面**：✅ 完整的 Web UI（Alpine.js），支持配置、Token、审计日志管理。
+**配置热重载**：✅ auth.tokens 和 defaults 可热重载，无需重启服务器。
+**监控指标**：🔄 Prometheus 指标基础设施已搭建，待暴露 /metrics 端点。
