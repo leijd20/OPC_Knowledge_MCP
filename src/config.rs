@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use tokio::sync::watch;
+
+use crate::error::AppError;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
@@ -71,6 +75,27 @@ impl Config {
         Ok(config)
     }
 
+    /// 从指定文件加载配置（供 ConfigWatcher 使用）
+    pub fn from_file(path: &str) -> anyhow::Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        let mut config: Config = toml::from_str(&content)?;
+
+        // 展开环境变量
+        for token in &mut config.auth.tokens {
+            token.token = expand_env_var(&token.token);
+        }
+
+        config.validate()?;
+        Ok(config)
+    }
+
+    /// 从字符串解析配置（供测试使用）
+    pub fn from_str(content: &str) -> anyhow::Result<Self> {
+        let config: Config = toml::from_str(content)?;
+        config.validate()?;
+        Ok(config)
+    }
+
     /// 将配置序列化为 TOML 并写入指定路径
     pub fn save(&self, path: &str) -> anyhow::Result<()> {
         let content = toml::to_string_pretty(self)?;
@@ -128,6 +153,53 @@ impl Config {
         }
 
         Ok(())
+    }
+}
+
+/// 配置文件监听器，支持热重载
+pub struct ConfigWatcher {
+    _watcher: RecommendedWatcher,
+}
+
+impl ConfigWatcher {
+    /// 创建配置监听器
+    ///
+    /// 返回 (ConfigWatcher, watch::Receiver<Config>)
+    /// Receiver 会在配置文件变化时收到新配置
+    pub fn new(path: &str) -> Result<(Self, watch::Receiver<Config>), AppError> {
+        // 加载初始配置
+        let config = Config::from_file(path)?;
+        let (tx, rx) = watch::channel(config);
+
+        let tx_clone = tx.clone();
+        let path_clone = path.to_string();
+
+        // 创建文件监听器
+        let mut watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
+            if let Ok(event) = res {
+                // 只处理修改事件
+                if matches!(event.kind, EventKind::Modify(_)) {
+                    match Config::from_file(&path_clone) {
+                        Ok(new_config) => {
+                            tracing::info!("Configuration file changed, reloading...");
+                            if tx_clone.send(new_config).is_err() {
+                                tracing::error!("Failed to send config update");
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to reload config: {}, keeping old config", e);
+                        }
+                    }
+                }
+            }
+        })
+        .map_err(|e| AppError::Config(format!("Failed to create watcher: {}", e)))?;
+
+        watcher
+            .watch(Path::new(path), RecursiveMode::NonRecursive)
+            .map_err(|e| AppError::Config(format!("Failed to watch file: {}", e)))?;
+
+        Ok((Self { _watcher: watcher }, rx))
     }
 }
 
@@ -367,6 +439,65 @@ response_type = "simple"
         assert_eq!(config.defaults.top_k, 10);
 
         std::env::remove_var("CONFIG_PATH");
+    }
+
+    #[tokio::test]
+    async fn test_config_watcher_detects_changes() {
+        use std::io::Write;
+        use tokio::time::{timeout, Duration};
+
+        let mut temp_file = NamedTempFile::new().unwrap();
+        let config_content = r#"
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[mcp]
+server_name = "test-server"
+version = "1.0.0"
+
+[auth]
+audit_log_path = "/tmp/audit.log"
+
+[[auth.tokens]]
+name = "test-user"
+token = "test-token"
+scopes = ["rag:read"]
+
+[lightrag]
+url = "http://localhost:9621"
+timeout_seconds = 30
+max_retries = 3
+retry_delay_seconds = 1
+
+[defaults]
+query_mode = "hybrid"
+top_k = 10
+response_type = "simple"
+"#;
+        writeln!(temp_file, "{}", config_content).unwrap();
+        temp_file.flush().unwrap();
+
+        let path = temp_file.path().to_str().unwrap().to_string();
+        let (_watcher, mut rx) = ConfigWatcher::new(&path).unwrap();
+
+        // 修改文件
+        let modified_content = config_content.replace("top_k = 10", "top_k = 20");
+        std::fs::write(&path, modified_content).unwrap();
+
+        // 等待通知（最多 2 秒）
+        let result = timeout(Duration::from_secs(2), rx.changed()).await;
+        assert!(result.is_ok(), "Should detect file change within 2 seconds");
+
+        // 验证新配置
+        let new_config = rx.borrow().clone();
+        assert_eq!(new_config.defaults.top_k, 20);
+    }
+
+    #[test]
+    fn test_config_reload_invalid_syntax() {
+        let result = Config::from_str("invalid toml [[[");
+        assert!(result.is_err());
     }
 }
 

@@ -20,6 +20,9 @@ reqwest = { version = "0.12", features = ["json"] }
 # 异步运行时
 tokio = { version = "1", features = ["full"] }
 
+# 文件监听（配置热重载）
+notify = "6.1"
+
 # 序列化
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
