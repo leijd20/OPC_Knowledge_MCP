@@ -17,8 +17,7 @@ pub struct AppState {
     pub shared: Arc<SharedState>,
 }
 
-pub fn build_app(config: &Config) -> Router {
-    let shared_state = Arc::new(SharedState::new(config));
+pub fn build_app(shared_state: Arc<SharedState>) -> Router {
     let token_validator = shared_state.token_validator.clone();
 
     let app_state = Arc::new(AppState {
@@ -57,16 +56,16 @@ pub fn build_app(config: &Config) -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
-pub async fn serve(config: Config) -> anyhow::Result<()> {
-    let app = build_app(&config);
+pub async fn serve(shared_state: Arc<SharedState>, host: String, port: u16, server_name: String, version: String) -> anyhow::Result<()> {
+    let app = build_app(shared_state);
 
-    let addr = format!("{}:{}", config.server.host, config.server.port);
+    let addr = format!("{}:{}", host, port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
     tracing::info!(
         "MCP Server '{}' v{} listening on {}",
-        config.mcp.server_name,
-        config.mcp.version,
+        server_name,
+        version,
         addr
     );
     axum::serve(listener, app).await?;
