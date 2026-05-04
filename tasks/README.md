@@ -65,22 +65,23 @@
 **时间**：2026-05-04 ~ 待定  
 **状态**：⬜ 未开始
 
-- [ ] CORS 配置
+- [ ] 管理界面（配置修改、Token 管理、审计日志、系统监控）
 - [ ] 配置热重载
-- [ ] 监控和指标
+- [ ] 监控和指标（Prometheus）
 
 > **注**：
 > - 流式查询已移除（MCP 协议不支持流式工具响应）
 > - 文件上传已移除（仅支持纯文本插入）
 > - 批量操作已移除（手动循环调用 `rag_insert` 即可）
+> - CORS 已移除（管理界面嵌入同一服务器，无需跨域）
 
 **任务详情**：
 - [Task 4.0: Phase 4 总览](task4-0-phase4-overview.md)
-- [Task 4.1: CORS 配置](task4-1-cors.md) ⬜
+- [Task 4.1: 管理界面](task4-1-admin-ui.md) ⬜
 - [Task 4.2: 配置热重载](task4-2-hot-reload.md) ⬜
 - [Task 4.3: 监控和指标](task4-3-metrics.md) ⬜
 
-**产出**：生产级功能（CORS、配置热重载、Prometheus metrics）
+**产出**：生产级功能（Web 管理界面、配置热重载、Prometheus metrics）
 
 ---
 
@@ -132,7 +133,7 @@
   - [task3-3-e2e-reposition.md](task3-3-e2e-reposition.md) ✅
 - Phase 4 任务：⬜ 待开始
   - [task4-0-phase4-overview.md](task4-0-phase4-overview.md)
-  - [task4-1-cors.md](task4-1-cors.md) ⬜
+  - [task4-1-admin-ui.md](task4-1-admin-ui.md) ⬜
   - [task4-2-hot-reload.md](task4-2-hot-reload.md) ⬜
   - [task4-3-metrics.md](task4-3-metrics.md) ⬜
 
