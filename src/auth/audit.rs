@@ -4,7 +4,7 @@ use std::io::Write;
 use std::path::Path;
 
 pub struct AuditLogger {
-    log_path: String,
+    pub log_path: String,
 }
 
 impl AuditLogger {

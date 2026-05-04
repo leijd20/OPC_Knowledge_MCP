@@ -1121,3 +1121,201 @@ async fn test_api_tokens_delete_returns_404_for_nonexistent() {
     let response = app.oneshot(request).await.unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
+
+// --- 迭代 8: GET /api/audit/logs (需要 audit:read scope) ---
+
+#[tokio::test]
+async fn test_api_audit_logs_requires_auth() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/audit/logs")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn test_api_audit_logs_rejects_without_audit_read_scope() {
+    let config = build_test_config("http://localhost:9999");
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/audit/logs")
+        .header(header::AUTHORIZATION, "Bearer alice-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn test_api_audit_logs_returns_empty_when_no_logs() {
+    use tempfile::NamedTempFile;
+
+    let temp_file = NamedTempFile::new().unwrap();
+    let log_path = temp_file.path().to_str().unwrap().to_string();
+
+    let mut config = build_test_config("http://localhost:9999");
+    config.auth.audit_log_path = log_path;
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("audit:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/audit/logs")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(json["logs"].as_array().unwrap().len(), 0);
+    assert_eq!(json["total"], 0);
+}
+
+#[tokio::test]
+async fn test_api_audit_logs_parses_and_returns_entries() {
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    writeln!(temp_file, "[2026-05-04T10:00:00Z] user=alice tool=rag_query params=test result=success").unwrap();
+    writeln!(temp_file, "[2026-05-04T10:01:00Z] user=bob tool=rag_insert params=data result=success").unwrap();
+    writeln!(temp_file, "[2026-05-04T10:02:00Z] user=alice tool=rag_query params=another result=success").unwrap();
+    temp_file.flush().unwrap();
+
+    let log_path = temp_file.path().to_str().unwrap().to_string();
+
+    let mut config = build_test_config("http://localhost:9999");
+    config.auth.audit_log_path = log_path;
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("audit:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/audit/logs")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    let logs = json["logs"].as_array().unwrap();
+    assert_eq!(logs.len(), 3);
+    assert_eq!(json["total"], 3);
+
+    // 验证第一条日志
+    assert_eq!(logs[0]["user"], "alice");
+    assert_eq!(logs[0]["tool"], "rag_query");
+    assert_eq!(logs[0]["params"], "test");
+    assert_eq!(logs[0]["result"], "success");
+}
+
+#[tokio::test]
+async fn test_api_audit_logs_supports_pagination() {
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    for i in 1..=10 {
+        writeln!(temp_file, "[2026-05-04T10:00:{}Z] user=alice tool=rag_query params=test{} result=success", i, i).unwrap();
+    }
+    temp_file.flush().unwrap();
+
+    let log_path = temp_file.path().to_str().unwrap().to_string();
+
+    let mut config = build_test_config("http://localhost:9999");
+    config.auth.audit_log_path = log_path;
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("audit:read".to_string());
+    }
+    let app = build_app(&config);
+
+    // 请求第 2 页，每页 3 条
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/audit/logs?page=2&page_size=3")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    let logs = json["logs"].as_array().unwrap();
+    assert_eq!(logs.len(), 3); // 第 2 页的 3 条
+    assert_eq!(json["total"], 10);
+    assert_eq!(json["page"], 2);
+    assert_eq!(json["page_size"], 3);
+
+    // 验证是第 4-6 条（索引 3-5）
+    assert_eq!(logs[0]["params"], "test4");
+    assert_eq!(logs[1]["params"], "test5");
+    assert_eq!(logs[2]["params"], "test6");
+}
+
+#[tokio::test]
+async fn test_api_audit_logs_filters_by_user() {
+    use tempfile::NamedTempFile;
+    use std::io::Write;
+
+    let mut temp_file = NamedTempFile::new().unwrap();
+    writeln!(temp_file, "[2026-05-04T10:00:00Z] user=alice tool=rag_query params=test result=success").unwrap();
+    writeln!(temp_file, "[2026-05-04T10:01:00Z] user=bob tool=rag_insert params=data result=success").unwrap();
+    writeln!(temp_file, "[2026-05-04T10:02:00Z] user=alice tool=rag_query params=another result=success").unwrap();
+    temp_file.flush().unwrap();
+
+    let log_path = temp_file.path().to_str().unwrap().to_string();
+
+    let mut config = build_test_config("http://localhost:9999");
+    config.auth.audit_log_path = log_path;
+    if let Some(admin) = config.auth.tokens.iter_mut().find(|t| t.name == "admin") {
+        admin.scopes.push("audit:read".to_string());
+    }
+    let app = build_app(&config);
+
+    let request = Request::builder()
+        .method(Method::GET)
+        .uri("/api/audit/logs?user=alice")
+        .header(header::AUTHORIZATION, "Bearer admin-token")
+        .body(Body::empty())
+        .unwrap();
+
+    let response = app.oneshot(request).await.unwrap();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+    let logs = json["logs"].as_array().unwrap();
+    assert_eq!(logs.len(), 2);
+    assert!(logs.iter().all(|log| log["user"] == "alice"));
+}

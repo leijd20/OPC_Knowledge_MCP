@@ -5,8 +5,9 @@
 //! - `/api/stats` - 请求统计（需要 `stats:read`）
 //! - `/api/config` - 配置查看和修改（需要 `config:read`/`config:write`）
 //! - `/api/tokens` - Token 管理（需要 `token:read`/`token:write`）
-//! - `/api/audit/logs` - 审计日志（待实现）
+//! - `/api/audit/logs` - 审计日志查询（需要 `audit:read`）
 
+pub mod audit;
 pub mod config;
 pub mod health;
 pub mod stats;
@@ -29,6 +30,7 @@ pub fn router(app_state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route("/config", get(config::get_config).patch(config::patch_config))
         .route("/tokens", get(tokens::list_tokens).post(tokens::create_token))
         .route("/tokens/:name", delete(tokens::delete_token))
+        .route("/audit/logs", get(audit::get_audit_logs))
         .route_layer(axum_middleware::from_fn_with_state(
             app_state,
             auth_middleware,
