@@ -211,6 +211,10 @@ scripts/                # E2E shell 测试脚本
 
 ### 运行测试
 
+#### 1. 单元测试（推荐，快速）
+
+测试各模块的业务逻辑，无需外部依赖：
+
 ```bash
 # 全部测试（单元 + 集成）
 cargo test
@@ -222,7 +226,9 @@ cargo test --lib
 cargo test --test integration_test
 ```
 
-端到端测试（需要 LightRAG 服务运行）：
+#### 2. 端到端测试（需要 LightRAG 环境）
+
+验证与真实 LightRAG 的集成，用于部署后验证：
 
 ```bash
 # 设置测试用 token
@@ -241,6 +247,11 @@ bash scripts/test_functions.sh    # 功能测试
 bash scripts/test_permissions.sh  # 权限测试
 bash scripts/test_errors.sh       # 错误处理测试
 ```
+
+**测试建议**：
+- **开发时**：运行单元测试（`cargo test --lib`），快速验证逻辑
+- **提交前**：运行所有测试（`cargo test`），确保集成正常
+- **部署后**：运行端到端测试（`bash scripts/test_all.sh`），验证真实集成
 
 ### 代码格式化
 

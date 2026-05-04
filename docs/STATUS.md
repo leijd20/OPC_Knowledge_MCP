@@ -77,13 +77,24 @@
 
 | 测试类型 | 状态 | 说明 |
 |---------|------|------|
-| 单元测试 | ✅ | 64 个测试，覆盖 config/auth/rag/mcp/middleware 模块 |
+| 单元测试 | ✅ | 67 个测试，覆盖 config/auth/rag/mcp/middleware 模块 |
 | 集成测试 | ✅ | 24 个测试：HTTP 认证 (7) + RAG mock (5) + 权限矩阵 (12) |
-| 端到端测试脚本 | ✅ | scripts/test_*.sh（需要 LightRAG 环境运行）|
-| MCP 协议测试 | ✅ | scripts/test_mcp.sh |
-| 功能测试 | ✅ | scripts/test_functions.sh |
-| 权限测试 | ✅ | scripts/test_permissions.sh |
-| 错误处理测试 | ✅ | scripts/test_errors.sh |
+| 端到端测试 | ✅ | scripts/test_*.sh（需要 LightRAG 环境运行）|
+
+**测试金字塔**：
+```
+     /\
+    /E2E\      ← 少量，验证真实集成（scripts/test_*.sh）
+   /------\
+  / 集成测试 \   ← 中等，mock 外部依赖（tests/integration_test.rs）
+ /----------\
+|  单元测试   |  ← 大量，快速反馈（各模块 #[cfg(test)]）
+|___________|
+```
+
+- **底层（单元测试）**：隔离测试各模块逻辑，快速反馈，无外部依赖
+- **中层（集成测试）**：测试模块协作，mock LightRAG 等外部依赖
+- **顶层（端到端测试）**：验证真实集成，需要 LightRAG 环境，用于部署后验证
 
 ## 依赖版本
 
