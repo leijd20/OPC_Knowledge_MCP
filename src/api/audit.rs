@@ -53,10 +53,7 @@ pub async fn get_audit_logs(
     let log_path = &state.shared.audit_logger.log_path;
 
     // 读取并解析日志文件
-    let entries = match read_log_file(log_path) {
-        Ok(entries) => entries,
-        Err(_) => vec![], // 文件不存在或为空，返回空列表
-    };
+    let entries = read_log_file(log_path).unwrap_or_default();
 
     // 应用过滤
     let filtered: Vec<LogEntry> = entries

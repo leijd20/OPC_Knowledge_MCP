@@ -6,6 +6,7 @@ use axum::{
     response::Response,
 };
 use std::sync::Arc;
+#[cfg(test)]
 use tokio::sync::RwLock;
 
 pub async fn auth_middleware(
@@ -35,9 +36,8 @@ pub async fn auth_middleware(
         .read()
         .await
         .validate(token)
-        .map_err(|e| {
+        .inspect_err(|_| {
             crate::metrics::record_auth_failure("invalid_token");
-            e
         })?;
 
     // 将用户上下文存入 request extensions

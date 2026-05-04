@@ -14,7 +14,7 @@ pub mod stats;
 pub mod tokens;
 
 use axum::{
-    middleware as axum_middleware, routing::delete, routing::get, routing::patch, routing::post,
+    middleware as axum_middleware, routing::delete, routing::get,
     Router,
 };
 use std::sync::Arc;

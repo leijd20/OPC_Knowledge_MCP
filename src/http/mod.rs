@@ -2,7 +2,6 @@ pub mod middleware;
 pub mod static_files;
 
 use crate::auth::TokenValidator;
-use crate::config::Config;
 use crate::mcp::{McpServer, SharedState};
 use axum::{middleware as axum_middleware, routing::get, Router};
 use metrics_exporter_prometheus::PrometheusHandle;

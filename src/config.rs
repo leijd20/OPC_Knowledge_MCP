@@ -90,7 +90,7 @@ impl Config {
     }
 
     /// 从字符串解析配置（供测试使用）
-    pub fn from_str(content: &str) -> anyhow::Result<Self> {
+    pub fn parse_from_str(content: &str) -> anyhow::Result<Self> {
         let config: Config = toml::from_str(content)?;
         config.validate()?;
         Ok(config)
@@ -508,7 +508,7 @@ response_type = "simple"
 
     #[test]
     fn test_config_reload_invalid_syntax() {
-        let result = Config::from_str("invalid toml [[[");
+        let result = Config::parse_from_str("invalid toml [[[");
         assert!(result.is_err());
     }
 }
