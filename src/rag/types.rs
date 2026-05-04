@@ -102,10 +102,7 @@ mod tests {
         assert!(parsed.working_directory.contains("rag_storage"));
         assert_eq!(parsed.configuration.llm_model, "Qwen/Qwen2.5-7B-Instruct");
         assert_eq!(parsed.configuration.embedding_model, "BAAI/bge-m3");
-        assert_eq!(
-            parsed.configuration.llm_binding.as_deref(),
-            Some("openai")
-        );
+        assert_eq!(parsed.configuration.llm_binding.as_deref(), Some("openai"));
         assert_eq!(parsed.core_version.as_deref(), Some("1.4.15"));
     }
 

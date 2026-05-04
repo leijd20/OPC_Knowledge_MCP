@@ -1,14 +1,12 @@
-use crate::auth::{TokenValidator, UserContext};
 use crate::auth::audit::AuditLogger;
+use crate::auth::{TokenValidator, UserContext};
 use crate::config::{Config, DefaultsConfig};
-use crate::rag::{LightRagClient, QueryRequest, InsertRequest};
+use crate::rag::{InsertRequest, LightRagClient, QueryRequest};
 use crate::stats::StatsCollector;
-use rmcp::{
-    tool, tool_handler, tool_router, ErrorData, ServerHandler,
-};
-use rmcp::handler::server::wrapper::Parameters;
 use rmcp::handler::server::tool::Extension;
-use rmcp::model::{CallToolResult, Content, ServerCapabilities, ServerInfo, Implementation};
+use rmcp::handler::server::wrapper::Parameters;
+use rmcp::model::{CallToolResult, Content, Implementation, ServerCapabilities, ServerInfo};
+use rmcp::{tool, tool_handler, tool_router, ErrorData, ServerHandler};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -34,7 +32,10 @@ pub struct SharedState {
 
 impl SharedState {
     pub fn new(config: &Config) -> Self {
-        Self::new_with_path(config, std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string()))
+        Self::new_with_path(
+            config,
+            std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string()),
+        )
     }
 
     pub fn new_with_path(config: &Config, config_path: String) -> Self {
@@ -83,10 +84,7 @@ impl McpServer {
         Self { state }
     }
 
-    fn get_user_from_parts(
-        &self,
-        parts: &http::request::Parts,
-    ) -> Result<UserContext, ErrorData> {
+    fn get_user_from_parts(&self, parts: &http::request::Parts) -> Result<UserContext, ErrorData> {
         parts
             .extensions
             .get::<UserContext>()
@@ -95,7 +93,13 @@ impl McpServer {
     }
 
     pub async fn check_scope(&self, user: &UserContext, scope: &str) -> Result<(), ErrorData> {
-        if self.state.token_validator.read().await.has_scope(user, scope) {
+        if self
+            .state
+            .token_validator
+            .read()
+            .await
+            .has_scope(user, scope)
+        {
             Ok(())
         } else {
             Err(ErrorData::invalid_request(
@@ -107,11 +111,7 @@ impl McpServer {
 
     /// 记录工具调用的统计和指标
     fn record_tool_metrics(&self, tool: &str, user: &str, duration_ms: f64, is_success: bool) {
-        crate::metrics::record_request(
-            tool,
-            user,
-            if is_success { "success" } else { "error" },
-        );
+        crate::metrics::record_request(tool, user, if is_success { "success" } else { "error" });
         crate::metrics::record_duration(tool, duration_ms);
     }
 }
@@ -156,12 +156,9 @@ impl McpServer {
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
-        self.state.audit_logger.log(
-            &user.name,
-            "rag_query",
-            &params.query,
-            "success",
-        );
+        self.state
+            .audit_logger
+            .log(&user.name, "rag_query", &params.query, "success");
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Mode: {}\n\n{}",
@@ -234,12 +231,9 @@ impl McpServer {
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
-        self.state.audit_logger.log(
-            &user.name,
-            "rag_clear",
-            "",
-            &response.status,
-        );
+        self.state
+            .audit_logger
+            .log(&user.name, "rag_clear", "", &response.status);
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Status: {}\nMessage: {}",
@@ -270,12 +264,9 @@ impl McpServer {
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
-        self.state.audit_logger.log(
-            &user.name,
-            "rag_health",
-            "",
-            "success",
-        );
+        self.state
+            .audit_logger
+            .log(&user.name, "rag_health", "", "success");
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "Status: {}\nWorking Dir: {}\nLLM Model: {}\nEmbedding Model: {}",
@@ -290,11 +281,12 @@ impl McpServer {
 #[tool_handler]
 impl ServerHandler for McpServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new(
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build()).with_server_info(
+            Implementation::new(
                 self.state.mcp_config.server_name.clone(),
                 self.state.mcp_config.version.clone(),
-            ))
+            ),
+        )
     }
 }
 
@@ -314,7 +306,11 @@ mod tests {
                     TokenConfig {
                         name: "admin".to_string(),
                         token: "admin-token".to_string(),
-                        scopes: vec!["rag:read".to_string(), "rag:write".to_string(), "rag:admin".to_string()],
+                        scopes: vec![
+                            "rag:read".to_string(),
+                            "rag:write".to_string(),
+                            "rag:admin".to_string(),
+                        ],
                     },
                     TokenConfig {
                         name: "reader".to_string(),
@@ -352,10 +348,7 @@ mod tests {
     }
 
     fn create_test_parts() -> http::request::Parts {
-        let request = http::Request::builder()
-            .uri("/")
-            .body(())
-            .unwrap();
+        let request = http::Request::builder().uri("/").body(()).unwrap();
         let (parts, _) = request.into_parts();
         parts
     }
@@ -444,7 +437,10 @@ mod tests {
         let user_without = create_test_user("user", vec!["rag:read"]);
 
         assert!(server.check_scope(&user_with, "rag:write").await.is_ok());
-        assert!(server.check_scope(&user_without, "rag:write").await.is_err());
+        assert!(server
+            .check_scope(&user_without, "rag:write")
+            .await
+            .is_err());
     }
 
     #[tokio::test]
@@ -456,7 +452,10 @@ mod tests {
         let user_without = create_test_user("user", vec!["rag:read"]);
 
         assert!(server.check_scope(&user_with, "rag:write").await.is_ok());
-        assert!(server.check_scope(&user_without, "rag:write").await.is_err());
+        assert!(server
+            .check_scope(&user_without, "rag:write")
+            .await
+            .is_err());
     }
 
     #[tokio::test]
@@ -468,7 +467,10 @@ mod tests {
         let user_without = create_test_user("user", vec!["rag:read", "rag:write"]);
 
         assert!(server.check_scope(&user_with, "rag:admin").await.is_ok());
-        assert!(server.check_scope(&user_without, "rag:admin").await.is_err());
+        assert!(server
+            .check_scope(&user_without, "rag:admin")
+            .await
+            .is_err());
     }
 
     // 测试参数默认值

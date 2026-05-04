@@ -60,7 +60,11 @@ mod tests {
                 TokenConfig {
                     name: "admin".to_string(),
                     token: "admin-token-123".to_string(),
-                    scopes: vec!["rag:read".to_string(), "rag:write".to_string(), "rag:admin".to_string()],
+                    scopes: vec![
+                        "rag:read".to_string(),
+                        "rag:write".to_string(),
+                        "rag:admin".to_string(),
+                    ],
                 },
                 TokenConfig {
                     name: "reader".to_string(),

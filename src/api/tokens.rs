@@ -21,7 +21,7 @@ use crate::http::AppState;
 #[derive(Debug, Serialize)]
 pub struct TokenPreview {
     pub name: String,
-    pub token_preview: String,  // 前4后2字符，中间 "..."
+    pub token_preview: String, // 前4后2字符，中间 "..."
     pub scopes: Vec<String>,
 }
 
@@ -75,13 +75,19 @@ pub async fn create_token(
     Json(req): Json<CreateTokenRequest>,
 ) -> Result<Json<CreateTokenResponse>, (StatusCode, String)> {
     if !user.scopes.iter().any(|s| s == "token:write") {
-        return Err((StatusCode::FORBIDDEN, "Missing token:write scope".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Missing token:write scope".to_string(),
+        ));
     }
 
     // 检查名称是否已存在
     let mut config = state.shared.config.write().await;
     if config.auth.tokens.iter().any(|t| t.name == req.name) {
-        return Err((StatusCode::CONFLICT, format!("Token '{}' already exists", req.name)));
+        return Err((
+            StatusCode::CONFLICT,
+            format!("Token '{}' already exists", req.name),
+        ));
     }
 
     // 生成随机 token（32 字节 hex = 64 字符）
@@ -96,7 +102,10 @@ pub async fn create_token(
 
     // 写入文件
     if let Err(e) = config.save(&state.shared.config_path) {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save config: {}", e)));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to save config: {}", e),
+        ));
     }
 
     Ok(Json(CreateTokenResponse {
@@ -112,7 +121,10 @@ pub async fn delete_token(
     Path(name): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if !user.scopes.iter().any(|s| s == "token:write") {
-        return Err((StatusCode::FORBIDDEN, "Missing token:write scope".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Missing token:write scope".to_string(),
+        ));
     }
 
     let mut config = state.shared.config.write().await;
@@ -127,7 +139,10 @@ pub async fn delete_token(
 
     // 写入文件
     if let Err(e) = config.save(&state.shared.config_path) {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save config: {}", e)));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to save config: {}", e),
+        ));
     }
 
     Ok(Json(serde_json::json!({

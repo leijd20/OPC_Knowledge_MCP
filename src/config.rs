@@ -1,6 +1,6 @@
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::watch;
 
 use crate::error::AppError;
@@ -56,8 +56,8 @@ pub struct DefaultsConfig {
 
 impl Config {
     pub fn load() -> anyhow::Result<Self> {
-        let config_path = std::env::var("CONFIG_PATH")
-            .unwrap_or_else(|_| "config.toml".to_string());
+        let config_path =
+            std::env::var("CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string());
 
         if !Path::new(&config_path).exists() {
             anyhow::bail!("Config file not found: {}", config_path);
@@ -136,10 +136,7 @@ impl Config {
         // top_k 范围
         let top_k = self.defaults.top_k;
         if top_k == 0 || top_k > 1000 {
-            anyhow::bail!(
-                "Invalid top_k {}: must be between 1 and 1000",
-                top_k
-            );
+            anyhow::bail!("Invalid top_k {}: must be between 1 and 1000", top_k);
         }
 
         // query_mode 有效值
@@ -215,8 +212,8 @@ fn expand_env_var(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     fn valid_config() -> Config {
         Config {
@@ -270,7 +267,10 @@ mod tests {
         config.lightrag.url = "ftp://localhost:9621".to_string();
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("must start with http"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("must start with http"));
     }
 
     #[test]
@@ -279,7 +279,10 @@ mod tests {
         config.server.port = 0;
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid server port"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid server port"));
     }
 
     #[test]
@@ -301,7 +304,10 @@ mod tests {
         config.auth.tokens = vec![];
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("No tokens configured"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("No tokens configured"));
     }
 
     #[test]
@@ -346,7 +352,10 @@ mod tests {
         config.defaults.query_mode = "invalid".to_string();
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid query_mode"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid query_mode"));
     }
 
     #[test]
@@ -381,7 +390,10 @@ mod tests {
         std::env::set_var("CONFIG_PATH", "nonexistent.toml");
         let result = Config::load();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Config file not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Config file not found"));
         std::env::remove_var("CONFIG_PATH");
     }
 
@@ -500,4 +512,3 @@ response_type = "simple"
         assert!(result.is_err());
     }
 }
-

@@ -49,9 +49,7 @@ impl axum::response::IntoResponse for AppError {
                 );
                 response
             }
-            AppError::LightRag(_) => {
-                (StatusCode::BAD_GATEWAY, self.to_string()).into_response()
-            }
+            AppError::LightRag(_) => (StatusCode::BAD_GATEWAY, self.to_string()).into_response(),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response(),
         }
     }

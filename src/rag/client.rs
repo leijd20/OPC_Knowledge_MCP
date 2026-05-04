@@ -89,7 +89,12 @@ impl LightRagClient {
                 Ok(result) => return Ok(result),
                 Err(e) if attempts < self.max_retries => {
                     attempts += 1;
-                    tracing::warn!("Request failed (attempt {}/{}): {}", attempts, self.max_retries, e);
+                    tracing::warn!(
+                        "Request failed (attempt {}/{}): {}",
+                        attempts,
+                        self.max_retries,
+                        e
+                    );
                     tokio::time::sleep(self.retry_delay).await;
                 }
                 Err(e) => return Err(AppError::LightRag(e.to_string())),
@@ -286,4 +291,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-

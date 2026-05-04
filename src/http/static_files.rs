@@ -16,11 +16,7 @@ pub async fn serve_static(uri: axum::http::Uri) -> Response {
     let path = uri.path().trim_start_matches('/');
 
     // 根路径返回 index.html
-    let path = if path.is_empty() {
-        "index.html"
-    } else {
-        path
-    };
+    let path = if path.is_empty() { "index.html" } else { path };
 
     match StaticAssets::get(path) {
         Some(content) => {

@@ -10,7 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::auth::UserContext;
-use crate::config::{AuthConfig, Config, DefaultsConfig, LightRagConfig, McpConfig, ServerConfig, TokenConfig};
+use crate::config::{
+    AuthConfig, Config, DefaultsConfig, LightRagConfig, McpConfig, ServerConfig, TokenConfig,
+};
 use crate::http::AppState;
 
 /// 脱敏后的配置（token 字段替换为 "***"）
@@ -32,7 +34,7 @@ pub struct MaskedAuthConfig {
 #[derive(Debug, Serialize)]
 pub struct MaskedTokenConfig {
     pub name: String,
-    pub token: String,  // 总是 "***"
+    pub token: String, // 总是 "***"
     pub scopes: Vec<String>,
 }
 
@@ -86,7 +88,10 @@ pub async fn patch_config(
     Json(patch): Json<ConfigPatch>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if !user.scopes.iter().any(|s| s == "config:write") {
-        return Err((StatusCode::FORBIDDEN, "Missing config:write scope".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Missing config:write scope".to_string(),
+        ));
     }
 
     // 读取当前配置
@@ -110,7 +115,10 @@ pub async fn patch_config(
 
     // 写入文件
     if let Err(e) = config.save(&state.shared.config_path) {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to save config: {}", e)));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to save config: {}", e),
+        ));
     }
 
     Ok(Json(serde_json::json!({

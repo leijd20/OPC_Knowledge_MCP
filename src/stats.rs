@@ -60,10 +60,7 @@ impl StatsCollector {
             );
         }
 
-        let uptime_seconds = self
-            .started_at
-            .map(|s| s.elapsed().as_secs())
-            .unwrap_or(0);
+        let uptime_seconds = self.started_at.map(|s| s.elapsed().as_secs()).unwrap_or(0);
 
         StatsSnapshot {
             total_requests: total,
