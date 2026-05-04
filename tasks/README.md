@@ -66,7 +66,7 @@
 **状态**：🔄 部分完成
 
 - [x] 管理界面（配置修改、Token 管理、审计日志、系统监控）✅ Task 4.1 完成
-- [ ] Alpine.js 前端重构（Task 4.1.3）⬜ 待开始
+- [x] Alpine.js 前端重构（Task 4.1.3）✅ 已完成
 - [x] 配置热重载 ✅ Task 4.2 完成
 - [ ] 监控和指标（Prometheus）🔄 Task 4.3 进行中（阶段 1/4 完成）
 
@@ -80,11 +80,11 @@
 **任务详情**：
 - [Task 4.0: Phase 4 总览](task4-0-phase4-overview.md)
 - [Task 4.1: 管理界面](task4-1-admin-ui.md) ✅ 已完成
-- [Task 4.1.3: Alpine.js 前端重构](task4-1-3-alpinejs-refactor.md) ⬜ 待开始
+- [Task 4.1.3: Alpine.js 前端重构](task4-1-3-alpinejs-refactor.md) ✅ 已完成
 - [Task 4.2: 配置热重载](task4-2-hot-reload.md) ✅ 已完成
 - [Task 4.3: 监控和指标](task4-3-metrics.md) 🔄 进行中（阶段 1/4）
 
-**产出**：生产级功能（Web 管理界面、Alpine.js 前端、配置热重载 ✅、Prometheus metrics 🔄）
+**产出**：生产级功能（Web 管理界面 ✅、Alpine.js 前端 ✅、配置热重载 ✅、Prometheus metrics 🔄）
 
 ---
 
