@@ -23,6 +23,10 @@ tokio = { version = "1", features = ["full"] }
 # 文件监听（配置热重载）
 notify = "6.1"
 
+# 监控指标
+metrics = "0.23"
+metrics-exporter-prometheus = "0.15"
+
 # 序列化
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

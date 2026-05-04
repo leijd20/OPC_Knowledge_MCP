@@ -104,6 +104,16 @@ impl McpServer {
             ))
         }
     }
+
+    /// 记录工具调用的统计和指标
+    fn record_tool_metrics(&self, tool: &str, user: &str, duration_ms: f64, is_success: bool) {
+        crate::metrics::record_request(
+            tool,
+            user,
+            if is_success { "success" } else { "error" },
+        );
+        crate::metrics::record_duration(tool, duration_ms);
+    }
 }
 
 #[tool_router]
@@ -133,11 +143,16 @@ impl McpServer {
         let mode_used = request.mode.clone();
 
         let result = self.state.rag_client.query(request).await;
+
+        // 记录统计和指标
+        let duration_ms = start.elapsed().as_millis() as f64;
+        let is_success = result.is_ok();
         self.state
             .stats
             .write()
             .await
-            .record("rag_query", start.elapsed().as_millis() as f64, result.is_ok());
+            .record("rag_query", duration_ms, is_success);
+        self.record_tool_metrics("rag_query", &user.name, duration_ms, is_success);
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
@@ -170,11 +185,16 @@ impl McpServer {
         };
 
         let result = self.state.rag_client.insert(request).await;
+
+        // 记录统计和指标
+        let duration_ms = start.elapsed().as_millis() as f64;
+        let is_success = result.is_ok();
         self.state
             .stats
             .write()
             .await
-            .record("rag_insert", start.elapsed().as_millis() as f64, result.is_ok());
+            .record("rag_insert", duration_ms, is_success);
+        self.record_tool_metrics("rag_insert", &user.name, duration_ms, is_success);
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
@@ -201,11 +221,16 @@ impl McpServer {
         self.check_scope(&user, "rag:write").await?;
 
         let result = self.state.rag_client.clear().await;
+
+        // 记录统计和指标
+        let duration_ms = start.elapsed().as_millis() as f64;
+        let is_success = result.is_ok();
         self.state
             .stats
             .write()
             .await
-            .record("rag_clear", start.elapsed().as_millis() as f64, result.is_ok());
+            .record("rag_clear", duration_ms, is_success);
+        self.record_tool_metrics("rag_clear", &user.name, duration_ms, is_success);
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
@@ -232,11 +257,16 @@ impl McpServer {
         self.check_scope(&user, "rag:admin").await?;
 
         let result = self.state.rag_client.health().await;
+
+        // 记录统计和指标
+        let duration_ms = start.elapsed().as_millis() as f64;
+        let is_success = result.is_ok();
         self.state
             .stats
             .write()
             .await
-            .record("rag_health", start.elapsed().as_millis() as f64, result.is_ok());
+            .record("rag_health", duration_ms, is_success);
+        self.record_tool_metrics("rag_health", &user.name, duration_ms, is_success);
 
         let response = result.map_err(|e| ErrorData::internal_error(e.to_string(), None))?;
 
