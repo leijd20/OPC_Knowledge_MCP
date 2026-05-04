@@ -5,69 +5,174 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PangenMCP Admin</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Alpine.js v3.14 -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
 </head>
-<body>
+<body x-data="{ currentView: 'dashboard' }">
     <div class="container">
         <header>
             <h1>PangenMCP Admin</h1>
-            <div id="auth-status">
-                <button id="logout-btn" class="btn btn-logout">Logout</button>
+            <div>
+                <button @click="$store.auth.logout()" class="btn btn-logout">Logout</button>
             </div>
         </header>
 
         <nav>
-            <button class="nav-btn active" data-view="dashboard">Dashboard</button>
-            <button class="nav-btn" data-view="config">Configuration</button>
-            <button class="nav-btn" data-view="tokens">Tokens</button>
-            <button class="nav-btn" data-view="audit">Audit Logs</button>
+            <button class="nav-btn" :class="{ 'active': currentView === 'dashboard' }" @click="currentView = 'dashboard'">Dashboard</button>
+            <button class="nav-btn" :class="{ 'active': currentView === 'config' }" @click="currentView = 'config'">Configuration</button>
+            <button class="nav-btn" :class="{ 'active': currentView === 'tokens' }" @click="currentView = 'tokens'">Tokens</button>
+            <button class="nav-btn" :class="{ 'active': currentView === 'audit' }" @click="currentView = 'audit'">Audit Logs</button>
         </nav>
 
-        <main id="content">
+        <main>
             <!-- Dashboard View -->
-            <div id="dashboard-view" class="view active">
+            <div x-show="currentView === 'dashboard'" x-data="dashboard">
                 <section class="card">
                     <h2>Server Health</h2>
-                    <div id="health-status">Loading...</div>
+                    <div x-show="loading">Loading...</div>
+                    <div x-show="!loading && health">
+                        <div><strong>Server:</strong> <span :class="health?.server?.status === 'healthy' ? 'status-healthy' : 'status-error'" x-text="health?.server?.status"></span></div>
+                        <div><strong>Version:</strong> <span x-text="health?.server?.version"></span></div>
+                        <div><strong>LightRAG:</strong> <span :class="health?.lightrag?.status === 'healthy' ? 'status-healthy' : 'status-error'" x-text="health?.lightrag?.status"></span></div>
+                        <div><strong>LightRAG URL:</strong> <span x-text="health?.lightrag?.url"></span></div>
+                    </div>
                 </section>
 
                 <section class="card">
                     <h2>Statistics</h2>
-                    <div id="stats-display">Loading...</div>
+                    <div x-show="loading">Loading...</div>
+                    <div x-show="!loading && stats">
+                        <div><strong>Total Requests:</strong> <span x-text="stats?.total_requests"></span></div>
+                        <div><strong>Total Errors:</strong> <span x-text="stats?.total_errors"></span></div>
+                        <div><strong>Uptime:</strong> <span x-text="formatUptime(stats?.uptime_seconds)"></span></div>
+
+                        <template x-if="stats?.by_tool && Object.keys(stats.by_tool).length > 0">
+                            <div>
+                                <h3>By Tool:</h3>
+                                <table>
+                                    <tr><th>Tool</th><th>Requests</th><th>Errors</th><th>Avg (ms)</th></tr>
+                                    <template x-for="[tool, data] in Object.entries(stats.by_tool)" :key="tool">
+                                        <tr>
+                                            <td x-text="tool"></td>
+                                            <td x-text="data.requests"></td>
+                                            <td x-text="data.errors"></td>
+                                            <td x-text="data.avg_duration_ms.toFixed(1)"></td>
+                                        </tr>
+                                    </template>
+                                </table>
+                            </div>
+                        </template>
+                    </div>
                 </section>
             </div>
 
             <!-- Configuration View -->
-            <div id="config-view" class="view">
+            <div x-show="currentView === 'config'" x-data="configuration">
                 <section class="card">
                     <h2>Server Configuration</h2>
-                    <div id="config-display">Loading...</div>
-                    <button id="edit-config-btn" class="btn">Edit Configuration</button>
+                    <div x-show="loading">Loading...</div>
+                    <div x-show="!loading && config">
+                        <h3>Server</h3>
+                        <div><strong>Host:</strong> <span x-text="config?.server?.host"></span></div>
+                        <div><strong>Port:</strong> <span x-text="config?.server?.port"></span></div>
+                        <h3>LightRAG</h3>
+                        <div><strong>URL:</strong> <span x-text="config?.lightrag?.url"></span></div>
+                        <div><strong>Timeout:</strong> <span x-text="config?.lightrag?.timeout_seconds"></span>s</div>
+                        <h3>Defaults</h3>
+                        <div><strong>Query Mode:</strong> <span x-text="config?.defaults?.query_mode"></span></div>
+                        <div><strong>Top K:</strong> <span x-text="config?.defaults?.top_k"></span></div>
+                        <div><strong>Response Type:</strong> <span x-text="config?.defaults?.response_type"></span></div>
+                        <button @click="openEditModal" class="btn">Edit Configuration</button>
+                    </div>
                 </section>
+
+                <!-- Edit Config Modal -->
+                <div class="modal" :class="{ 'active': editing }">
+                    <div class="modal-content">
+                        <span class="close" @click="closeEditModal">&times;</span>
+                        <h2>Edit Configuration</h2>
+                        <form @submit.prevent="saveConfig">
+                            <h3>Defaults</h3>
+                            <label>Query Mode:
+                                <select x-model="form.query_mode">
+                                    <option value="naive">Naive</option>
+                                    <option value="local">Local</option>
+                                    <option value="global">Global</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </label>
+                            <label>Top K: <input type="number" x-model="form.top_k" min="1" max="1000" required></label>
+                            <label>Response Type: <input type="text" x-model="form.response_type" required></label>
+                            <button type="submit" class="btn">Save</button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <!-- Tokens View -->
-            <div id="tokens-view" class="view">
+            <div x-show="currentView === 'tokens'" x-data="tokens">
                 <section class="card">
                     <h2>Access Tokens</h2>
-                    <button id="create-token-btn" class="btn">Create New Token</button>
-                    <div id="tokens-list">Loading...</div>
+                    <button @click="openCreateModal" class="btn">Create New Token</button>
+                    <div x-show="loading">Loading...</div>
+                    <table x-show="!loading && tokens.length > 0">
+                        <tr><th>Name</th><th>Token Preview</th><th>Scopes</th><th>Actions</th></tr>
+                        <template x-for="token in tokens" :key="token.name">
+                            <tr>
+                                <td x-text="token.name"></td>
+                                <td><code x-text="token.token_preview"></code></td>
+                                <td x-text="token.scopes.join(', ')"></td>
+                                <td><button class="btn btn-danger" @click="deleteToken(token.name)">Delete</button></td>
+                            </tr>
+                        </template>
+                    </table>
                 </section>
+
+                <!-- Create Token Modal -->
+                <div class="modal" :class="{ 'active': creating }">
+                    <div class="modal-content">
+                        <span class="close" @click="closeCreateModal">&times;</span>
+                        <h2>Create New Token</h2>
+                        <form @submit.prevent="createToken" x-show="!newToken">
+                            <label>Name: <input type="text" x-model="form.name" required></label>
+                            <label>Scopes: <input type="text" x-model="form.scopes" placeholder="rag:read,rag:write" required></label>
+                            <button type="submit" class="btn">Create</button>
+                        </form>
+                        <div x-show="newToken">
+                            <p><strong>Token created!</strong></p>
+                            <p>Copy this token (shown only once):</p>
+                            <code x-text="newToken"></code>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Audit Logs View -->
-            <div id="audit-view" class="view">
+            <div x-show="currentView === 'audit'" x-data="auditLogs">
                 <section class="card">
                     <h2>Audit Logs</h2>
                     <div class="filters">
-                        <input type="text" id="filter-user" placeholder="Filter by user">
-                        <input type="text" id="filter-tool" placeholder="Filter by tool">
-                        <button id="apply-filters-btn" class="btn">Apply Filters</button>
+                        <input type="text" x-model="filters.user" placeholder="Filter by user">
+                        <input type="text" x-model="filters.tool" placeholder="Filter by tool">
+                        <button @click="applyFilters" class="btn">Apply Filters</button>
                     </div>
-                    <div id="audit-logs">Loading...</div>
+                    <div x-show="loading">Loading...</div>
+                    <table x-show="!loading && logs.length > 0">
+                        <tr><th>Time</th><th>User</th><th>Tool</th><th>Params</th><th>Result</th></tr>
+                        <template x-for="log in logs" :key="log.timestamp">
+                            <tr>
+                                <td x-text="formatTime(log.timestamp)"></td>
+                                <td x-text="log.user"></td>
+                                <td x-text="log.tool"></td>
+                                <td x-text="log.params"></td>
+                                <td x-text="log.result"></td>
+                            </tr>
+                        </template>
+                    </table>
                     <div class="pagination">
-                        <button id="prev-page-btn" class="btn">Previous</button>
-                        <span id="page-info"></span>
-                        <button id="next-page-btn" class="btn">Next</button>
+                        <button @click="prevPage" :disabled="!canGoPrev" class="btn">Previous</button>
+                        <span>Page <span x-text="page"></span> (<span x-text="total"></span> total)</span>
+                        <button @click="nextPage" :disabled="!canGoNext" class="btn">Next</button>
                     </div>
                 </section>
             </div>
@@ -76,46 +181,6 @@
         <footer>
             <p>PangenMCP v1.0</p>
         </footer>
-    </div>
-
-    <!-- Modal for creating tokens -->
-    <div id="token-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Create New Token</h2>
-            <form id="create-token-form">
-                <label>Name: <input type="text" id="token-name" required></label>
-                <label>Scopes: <input type="text" id="token-scopes" placeholder="rag:read,rag:write" required></label>
-                <button type="submit" class="btn">Create</button>
-            </form>
-            <div id="new-token-display" style="display:none;">
-                <p><strong>Token created!</strong></p>
-                <p>Copy this token (shown only once):</p>
-                <code id="new-token-value"></code>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for editing config -->
-    <div id="config-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Edit Configuration</h2>
-            <form id="edit-config-form">
-                <h3>Defaults</h3>
-                <label>Query Mode:
-                    <select id="config-query-mode">
-                        <option value="naive">Naive</option>
-                        <option value="local">Local</option>
-                        <option value="global">Global</option>
-                        <option value="hybrid">Hybrid</option>
-                    </select>
-                </label>
-                <label>Top K: <input type="number" id="config-top-k" min="1" max="1000" required></label>
-                <label>Response Type: <input type="text" id="config-response-type" required></label>
-                <button type="submit" class="btn">Save</button>
-            </form>
-        </div>
     </div>
 
     <script src="app.js"></script>

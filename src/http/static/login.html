@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PangenMCP Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .login-box h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .login-box p {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+
+        .login-form label {
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .login-form button {
+            width: 100%;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-form button:hover {
+            background: #2980b9;
+        }
+
+        .login-error {
+            background: #fee;
+            color: #c00;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container" x-data="loginPage">
+        <div class="login-box">
+            <h1>PangenMCP Admin</h1>
+            <p>Enter your admin token to continue</p>
+
+            <div x-show="error" class="login-error" x-text="error"></div>
+
+            <form @submit.prevent="login" class="login-form">
+                <label>
+                    <strong>Admin Token</strong>
+                    <input type="password" x-model="token" placeholder="Enter your token" required autofocus>
+                </label>
+                <button type="submit" :disabled="loading">
+                    <span x-show="!loading">Login</span>
+                    <span x-show="loading">Verifying...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            // Check if already logged in
+            const existingToken = localStorage.getItem('admin_token');
+            if (existingToken) {
+                window.location.href = '/';
+            }
+
+            Alpine.data('loginPage', () => ({
+                token: '',
+                loading: false,
+                error: null,
+
+                async login() {
+                    if (!this.token.trim()) {
+                        this.error = 'Please enter a token';
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.error = null;
+
+                    try {
+                        // Verify token by calling /api/health (no auth required)
+                        // Then try /api/stats to verify token is valid
+                        const response = await fetch('/api/stats', {
+                            headers: {
+                                'Authorization': `Bearer ${this.token}`
+                            }
+                        });
+
+                        // Accept 200 (has stats:read) or 403 (valid token but no scope)
+                        // Reject 401 (invalid token)
+                        if (response.status === 200 || response.status === 403) {
+                            localStorage.setItem('admin_token', this.token);
+                            window.location.href = '/';
+                        } else if (response.status === 401) {
+                            this.error = 'Invalid token';
+                        } else {
+                            this.error = 'Unexpected error: ' + response.status;
+                        }
+                    } catch (err) {
+                        this.error = 'Network error: ' + err.message;
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
