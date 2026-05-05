@@ -61,9 +61,9 @@ pub struct McpServer {
 // 工具参数定义
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct QueryParams {
-    #[schemars(description = "Query text")]
+    #[schemars(description = "Query text (supports Pangen usage and computational lithography topics)")]
     pub query: String,
-    #[schemars(description = "Query mode: naive, local, global, or hybrid")]
+    #[schemars(description = "Query mode: naive, local, global, or hybrid (hybrid recommended)")]
     pub mode: Option<String>,
     #[schemars(description = "Number of results to return")]
     pub top_k: Option<u32>,
@@ -118,7 +118,7 @@ impl McpServer {
 
 #[tool_router]
 impl McpServer {
-    #[tool(description = "Query the LightRAG knowledge base")]
+    #[tool(description = "Query the OPC knowledge base for Pangen software usage and computational lithography knowledge")]
     async fn rag_query(
         &self,
         Parameters(params): Parameters<QueryParams>,
@@ -166,7 +166,7 @@ impl McpServer {
         ))]))
     }
 
-    #[tool(description = "Insert text into the LightRAG knowledge base")]
+    #[tool(description = "Insert text into the OPC knowledge base (Pangen docs, computational lithography notes, etc.)")]
     async fn rag_insert(
         &self,
         Parameters(params): Parameters<InsertParams>,
@@ -208,7 +208,7 @@ impl McpServer {
         ))]))
     }
 
-    #[tool(description = "Clear all documents from the LightRAG knowledge base")]
+    #[tool(description = "Clear all documents from the OPC knowledge base")]
     async fn rag_clear(
         &self,
         Extension(parts): Extension<http::request::Parts>,
@@ -241,7 +241,7 @@ impl McpServer {
         ))]))
     }
 
-    #[tool(description = "Check LightRAG server health status")]
+    #[tool(description = "Check OPC knowledge base server health status")]
     async fn rag_health(
         &self,
         Extension(parts): Extension<http::request::Parts>,

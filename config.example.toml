@@ -8,7 +8,7 @@ port = 8080
 
 [mcp]
 # MCP 服务器信息
-server_name = "rag-mcp-server"
+server_name = "OPC_Knowledge_MCP"
 version = "0.1.0"
 
 # ============================================
