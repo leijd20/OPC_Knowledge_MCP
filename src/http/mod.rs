@@ -5,7 +5,7 @@ use crate::auth::TokenValidator;
 use crate::mcp::{McpServer, SharedState};
 use axum::{middleware as axum_middleware, routing::get, Router};
 use metrics_exporter_prometheus::PrometheusHandle;
-use rmcp::transport::StreamableHttpService;
+use rmcp::transport::{streamable_http_server::StreamableHttpServerConfig, StreamableHttpService};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::trace::TraceLayer;
@@ -28,10 +28,13 @@ pub fn build_app(shared_state: Arc<SharedState>, metrics_handle: PrometheusHandl
     // 创建 MCP 服务（工厂函数）
     let mcp_service = {
         let shared = shared_state.clone();
+        // 禁用 Host 白名单检查，允许局域网访问
+        // 默认配置只允许 localhost/127.0.0.1/::1，会拒绝局域网 IP
+        let config = StreamableHttpServerConfig::default().disable_allowed_hosts();
         StreamableHttpService::new(
             move || Ok(McpServer::new(shared.clone())),
             Arc::new(rmcp::transport::streamable_http_server::session::local::LocalSessionManager::default()),
-            Default::default(),
+            config,
         )
     };
 
