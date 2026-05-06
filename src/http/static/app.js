@@ -246,7 +246,7 @@ document.addEventListener('alpine:init', () => {
         refreshing: false,
         creating: false,
         newToken: null,
-        revealedTokens: new Set(), // 跟踪哪些 token 已显示
+        revealedTokens: {}, // 跟踪哪些 token 已显示（改为对象）
         validScopes: VALID_SCOPES,
         form: {
             name: '',
@@ -340,7 +340,7 @@ document.addEventListener('alpine:init', () => {
             if (token.revealed) {
                 // 隐藏：重新加载以获取遮蔽版本
                 token.revealed = false;
-                this.revealedTokens.delete(name);
+                delete this.revealedTokens[name];
                 await this.loadTokens();
             } else {
                 // 显示：获取完整 token
@@ -348,7 +348,7 @@ document.addEventListener('alpine:init', () => {
                     const data = await apiCall(`/tokens/${name}/reveal`);
                     token.token_preview = data.token;
                     token.revealed = true;
-                    this.revealedTokens.add(name);
+                    this.revealedTokens[name] = true;
                     Alpine.store('toast').success('Full token revealed');
                 } catch (err) {
                     Alpine.store('toast').error('Failed to reveal token: ' + err.message);
