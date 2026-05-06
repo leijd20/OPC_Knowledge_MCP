@@ -278,6 +278,12 @@ document.addEventListener('alpine:init', () => {
             } finally {
                 this.loading = false;
                 this.refreshing = false;
+                // 重新初始化 Lucide 图标
+                this.$nextTick(() => {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                });
             }
         },
 
@@ -338,12 +344,10 @@ document.addEventListener('alpine:init', () => {
             if (!token) return;
 
             if (token.revealed) {
-                // 隐藏：重新加载以获取遮蔽版本
                 token.revealed = false;
                 delete this.revealedTokens[name];
                 await this.loadTokens();
             } else {
-                // 显示：获取完整 token
                 try {
                     const data = await apiCall(`/tokens/${name}/reveal`);
                     token.token_preview = data.token;

@@ -519,7 +519,8 @@
                                                     class="p-1 hover:bg-gray-200 rounded transition-colors"
                                                     :title="token.revealed ? 'Hide full token' : 'Show full token'"
                                                 >
-                                                    <i :data-lucide="token.revealed ? 'eye-off' : 'eye'" class="w-4 h-4 text-gray-600"></i>
+                                                    <i x-show="!token.revealed" data-lucide="eye" class="w-4 h-4 text-gray-600"></i>
+                                                    <i x-show="token.revealed" data-lucide="eye-off" class="w-4 h-4 text-gray-600" style="display: none;"></i>
                                                 </button>
                                                 <!-- Copy button -->
                                                 <button
