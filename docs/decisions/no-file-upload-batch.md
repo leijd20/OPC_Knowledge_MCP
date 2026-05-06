@@ -71,12 +71,12 @@ mcp.call_tool("rag_batch_insert", {"documents": documents})
 
 ## 项目边界
 
-**pangenmcp 的职责**：
+**OPC_Knowledge_MCP 的职责**:
 - ✅ 提供标准 MCP 接口访问 LightRAG
 - ✅ 认证、权限、审计
 - ✅ 纯文本插入和查询
 
-**不是 pangenmcp 的职责**：
+**不是 OPC_Knowledge_MCP 的职责**:
 - ❌ 文档格式解析
 - ❌ 批量数据导入
 - ❌ 文件存储管理

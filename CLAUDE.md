@@ -4,7 +4,7 @@
 
 ## 项目简介
 
-基于 Rust 的 MCP (Model Context Protocol) 服务器，作为 AI Agent 与本地 LightRAG 知识库之间的桥梁，提供标准化的查询和文档管理接口。
+**OPC_Knowledge_MCP** - 基于 Rust 的 MCP (Model Context Protocol) 服务器，作为 AI Agent 与本地 LightRAG 知识库之间的桥梁，提供标准化的查询和文档管理接口。
 
 - **传输协议**：MCP Streamable HTTP（基于 [rmcp](https://crates.io/crates/rmcp)）
 - **HTTP 框架**：Axum
@@ -14,7 +14,7 @@
 ## 项目结构
 
 ```
-pangenmcp/
+opc_knowledge_mcp/
 ├── src/
 │   ├── lib.rs          # 库入口（导出公共模块，供集成测试使用）
 │   ├── main.rs         # 二进制入口（加载配置 → 启动服务器）

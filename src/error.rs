@@ -45,7 +45,7 @@ impl axum::response::IntoResponse for AppError {
                 // RFC 6750: 明确告知客户端使用静态 Bearer Token，避免触发 OAuth 自动协商
                 response.headers_mut().insert(
                     header::WWW_AUTHENTICATE,
-                    HeaderValue::from_static("Bearer realm=\"pangenmcp\""),
+                    HeaderValue::from_static("Bearer realm=\"opc_knowledge_mcp\""),
                 );
                 response
             }

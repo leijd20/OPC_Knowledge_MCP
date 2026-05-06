@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::auth::UserContext;
-use crate::config::{Config, DefaultsConfig, LightRagConfig, McpConfig, ServerConfig};
 #[cfg(test)]
 use crate::config::{AuthConfig, TokenConfig};
+use crate::config::{Config, DefaultsConfig, LightRagConfig, McpConfig, ServerConfig};
 use crate::http::AppState;
 
 /// 脱敏后的配置（token 字段替换为 "***"）

@@ -398,7 +398,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: 'pangenmcp'
+  - job_name: 'opc_knowledge_mcp'
     static_configs:
       - targets: ['localhost:8080']
     metrics_path: '/metrics'

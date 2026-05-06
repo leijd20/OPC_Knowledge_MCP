@@ -1,5 +1,5 @@
 [package]
-name = "pangenmcp"
+name = "opc_knowledge_mcp"
 version = "0.1.0"
 edition = "2021"
 

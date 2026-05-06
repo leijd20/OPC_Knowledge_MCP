@@ -50,7 +50,7 @@ GET /metrics
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: 'pangenmcp'
+  - job_name: 'opc_knowledge_mcp'
     static_configs:
       - targets: ['localhost:8080']
     metrics_path: '/metrics'
@@ -102,7 +102,7 @@ sum by (reason) (rate(mcp_auth_failures_total[5m]))
 ```yaml
 # alerts.yml
 groups:
-  - name: pangenmcp
+  - name: opc_knowledge_mcp
     interval: 30s
     rules:
       - alert: LightRAGUnhealthy

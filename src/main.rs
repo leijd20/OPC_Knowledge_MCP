@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pangenmcp::{config, http, mcp::SharedState};
+use opc_knowledge_mcp::{config, http, mcp::SharedState};
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -9,14 +9,14 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "pangenmcp=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "opc_knowledge_mcp=debug,tower_http=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
     // 初始化 Prometheus metrics
-    let metrics_handle = pangenmcp::metrics::init_metrics();
-    pangenmcp::metrics::register_metrics();
+    let metrics_handle = opc_knowledge_mcp::metrics::init_metrics();
+    opc_knowledge_mcp::metrics::register_metrics();
     tracing::info!("Prometheus metrics initialized");
 
     // 获取配置文件路径
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
 
             // 更新可热重载的部分
             *shared_clone.token_validator.write().await =
-                pangenmcp::auth::TokenValidator::new(&new_config.auth);
+                opc_knowledge_mcp::auth::TokenValidator::new(&new_config.auth);
             *shared_clone.defaults.write().await = new_config.defaults.clone();
 
             // 更新完整配置（供管理 API 使用）

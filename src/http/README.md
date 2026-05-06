@@ -65,7 +65,7 @@ POST /mcp   →  rmcp StreamableHttpService（标准 MCP 协议，需 Bearer 认
 
 | 状态码 | 场景 | 备注 |
 |-------|------|------|
-| `401 Unauthorized` | Token 缺失、格式错误或无效 | 响应头含 `WWW-Authenticate: Bearer realm="pangenmcp"`（RFC 6750） |
+| `401 Unauthorized` | Token 缺失、格式错误或无效 | 响应头含 `WWW-Authenticate: Bearer realm="opc_knowledge_mcp"`（RFC 6750） |
 | `400 Bad Request`  | 请求体不符合 MCP JSON-RPC 格式 | |
 | `404 Not Found` | 路径未注册（如 OAuth 元数据探测） | |
 | `500 Internal Server Error` | 其他内部错误（含 LightRAG 通信失败） | |

@@ -61,7 +61,9 @@ pub struct McpServer {
 // 工具参数定义
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct QueryParams {
-    #[schemars(description = "Query text (supports Pangen usage and computational lithography topics)")]
+    #[schemars(
+        description = "Query text (supports Pangen usage and computational lithography topics)"
+    )]
     pub query: String,
     #[schemars(description = "Query mode: naive, local, global, or hybrid (hybrid recommended)")]
     pub mode: Option<String>,
@@ -118,7 +120,9 @@ impl McpServer {
 
 #[tool_router]
 impl McpServer {
-    #[tool(description = "Query the OPC knowledge base for Pangen software usage and computational lithography knowledge")]
+    #[tool(
+        description = "Query the OPC knowledge base for Pangen software usage and computational lithography knowledge"
+    )]
     async fn rag_query(
         &self,
         Parameters(params): Parameters<QueryParams>,
@@ -166,7 +170,9 @@ impl McpServer {
         ))]))
     }
 
-    #[tool(description = "Insert text into the OPC knowledge base (Pangen docs, computational lithography notes, etc.)")]
+    #[tool(
+        description = "Insert text into the OPC knowledge base (Pangen docs, computational lithography notes, etc.)"
+    )]
     async fn rag_insert(
         &self,
         Parameters(params): Parameters<InsertParams>,

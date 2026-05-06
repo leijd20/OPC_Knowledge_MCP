@@ -88,9 +88,9 @@
 
 **服务器日志验证**：
 ```
-INFO pangenmcp::config: Configuration file changed, reloading...
-INFO pangenmcp: Configuration file changed, reloading...
-INFO pangenmcp: Configuration reloaded successfully
+INFO opc_knowledge_mcp::config: Configuration file changed, reloading...
+INFO opc_knowledge_mcp: Configuration file changed, reloading...
+INFO opc_knowledge_mcp: Configuration reloaded successfully
 ```
 
 **测试结论**：✅ 配置热重载功能完全正常
@@ -417,9 +417,9 @@ cargo run
 
 启动日志会显示：
 ```
-INFO pangenmcp: Starting test-server v1.0.0 on 127.0.0.1:8080
-INFO pangenmcp: LightRAG URL: http://localhost:9999
-INFO pangenmcp: Config hot reload enabled for: auth.tokens, defaults
+INFO opc_knowledge_mcp: Starting test-server v1.0.0 on 127.0.0.1:8080
+INFO opc_knowledge_mcp: LightRAG URL: http://localhost:9999
+INFO opc_knowledge_mcp: Config hot reload enabled for: auth.tokens, defaults
 ```
 
 ### 修改配置
@@ -435,9 +435,9 @@ scopes = ["rag:read"]
 
 保存后，服务器日志会显示：
 ```
-INFO pangenmcp::config: Configuration file changed, reloading...
-INFO pangenmcp: Configuration file changed, reloading...
-INFO pangenmcp: Configuration reloaded successfully
+INFO opc_knowledge_mcp::config: Configuration file changed, reloading...
+INFO opc_knowledge_mcp: Configuration file changed, reloading...
+INFO opc_knowledge_mcp: Configuration reloaded successfully
 ```
 
 新 token 立即生效，无需重启服务器。
@@ -445,7 +445,7 @@ INFO pangenmcp: Configuration reloaded successfully
 ### 配置错误处理
 
 如果配置文件语法错误，服务器会：
-1. 记录错误日志：`ERROR pangenmcp::config: Failed to reload config: ...`
+1. 记录错误日志：`ERROR opc_knowledge_mcp::config: Failed to reload config: ...`
 2. 保留旧配置继续运行
 3. 不会崩溃或中断服务
 

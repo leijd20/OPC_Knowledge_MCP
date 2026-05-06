@@ -69,7 +69,7 @@ main()
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `CONFIG_PATH` | 配置文件路径 | `config.toml` |
-| `RUST_LOG` | 日志级别 | `pangenmcp=debug,tower_http=debug` |
+| `RUST_LOG` | 日志级别 | `opc_knowledge_mcp=debug,tower_http=debug` |
 | `USER_*_TOKEN` | 用户 token（在 .env 中定义） | - |
 
 ## 子模块

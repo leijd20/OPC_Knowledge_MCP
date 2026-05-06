@@ -1,4 +1,4 @@
-# pangenMCP - LightRAG MCP 服务器
+# OPC_Knowledge_MCP - LightRAG MCP 服务器
 
 基于 Rust 的 MCP (Model Context Protocol) 服务器，为 AI Agent 提供访问 LightRAG 知识库的标准化接口。
 

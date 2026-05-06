@@ -396,7 +396,7 @@ GET /health
 ## 7. 项目结构（Rust）
 
 ```
-pangenMCP/
+OPC_Knowledge_MCP/
 ├── Cargo.toml
 ├── src/
 │   ├── main.rs              # 入口点，启动 Axum HTTP 服务器

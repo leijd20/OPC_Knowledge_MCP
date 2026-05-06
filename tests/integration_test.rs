@@ -9,12 +9,12 @@ use axum::{
     body::Body,
     http::{header, Method, Request, StatusCode},
 };
-use pangenmcp::auth::UserContext;
-use pangenmcp::config::{
+use opc_knowledge_mcp::auth::UserContext;
+use opc_knowledge_mcp::config::{
     AuthConfig, Config, DefaultsConfig, LightRagConfig, McpConfig, ServerConfig, TokenConfig,
 };
-use pangenmcp::http::build_app;
-use pangenmcp::mcp::{McpServer, SharedState};
+use opc_knowledge_mcp::http::build_app;
+use opc_knowledge_mcp::mcp::{McpServer, SharedState};
 use std::sync::Arc;
 use tower::ServiceExt;
 
@@ -79,8 +79,8 @@ fn user_context(name: &str, scopes: &[&str]) -> UserContext {
 
 /// 创建测试用的 app（包含 metrics 初始化）
 fn build_test_app(config: &Config) -> axum::Router {
-    let metrics_handle = pangenmcp::metrics::init_metrics();
-    pangenmcp::metrics::register_metrics();
+    let metrics_handle = opc_knowledge_mcp::metrics::init_metrics();
+    opc_knowledge_mcp::metrics::register_metrics();
     build_app(Arc::new(SharedState::new(config)), metrics_handle)
 }
 
@@ -229,7 +229,7 @@ async fn test_rag_client_query_full_flow() {
     let config = build_test_config(&server.url());
     let shared = Arc::new(SharedState::new(&config));
 
-    let request = pangenmcp::rag::QueryRequest {
+    let request = opc_knowledge_mcp::rag::QueryRequest {
         query: "test query".to_string(),
         mode: "hybrid".to_string(),
         top_k: 10,
@@ -256,7 +256,7 @@ async fn test_rag_client_insert_full_flow() {
     let config = build_test_config(&server.url());
     let shared = Arc::new(SharedState::new(&config));
 
-    let request = pangenmcp::rag::InsertRequest {
+    let request = opc_knowledge_mcp::rag::InsertRequest {
         text: "test document".to_string(),
         description: None,
     };
@@ -1436,10 +1436,10 @@ async fn test_metrics_endpoint_returns_prometheus_format() {
     let app = build_test_app(&config);
 
     // 先记录一些指标
-    pangenmcp::metrics::record_request("rag_query", "test", "success");
-    pangenmcp::metrics::record_duration("rag_query", 100.0);
-    pangenmcp::metrics::set_lightrag_status(true);
-    pangenmcp::metrics::record_auth_failure("test_failure");
+    opc_knowledge_mcp::metrics::record_request("rag_query", "test", "success");
+    opc_knowledge_mcp::metrics::record_duration("rag_query", 100.0);
+    opc_knowledge_mcp::metrics::set_lightrag_status(true);
+    opc_knowledge_mcp::metrics::record_auth_failure("test_failure");
 
     let request = Request::builder()
         .method(Method::GET)

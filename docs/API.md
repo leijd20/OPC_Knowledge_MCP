@@ -81,7 +81,7 @@ Authorization: Bearer your-token-here
     "port": 8080
   },
   "mcp": {
-    "server_name": "pangenmcp",
+    "server_name": "opc_knowledge_mcp",
     "version": "1.0.0"
   },
   "auth": {

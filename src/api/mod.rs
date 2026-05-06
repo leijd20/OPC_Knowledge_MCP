@@ -13,10 +13,7 @@ pub mod health;
 pub mod stats;
 pub mod tokens;
 
-use axum::{
-    middleware as axum_middleware, routing::delete, routing::get,
-    Router,
-};
+use axum::{middleware as axum_middleware, routing::delete, routing::get, Router};
 use std::sync::Arc;
 
 use crate::http::{middleware::auth_middleware, AppState};

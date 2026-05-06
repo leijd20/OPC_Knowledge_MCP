@@ -8,7 +8,7 @@
 
 ## 目标
 
-为 pangenmcp 添加生产环境常用的增强功能，提升可用性和可维护性。Phase 4 聚焦于**运维友好性**，而非业务功能扩展。
+为 opc_knowledge_mcp 添加生产环境常用的增强功能，提升可用性和可维护性。Phase 4 聚焦于**运维友好性**，而非业务功能扩展。
 
 **关键指标**：
 - CORS 配置完成，支持跨域访问
@@ -433,7 +433,7 @@ Phase 4 完成后，服务已具备生产级功能，但部署方式仍需手动
 
 ```yaml
 scrape_configs:
-  - job_name: 'pangenmcp'
+  - job_name: 'opc_knowledge_mcp'
     static_configs:
       - targets: ['localhost:8080']
     metrics_path: '/metrics'

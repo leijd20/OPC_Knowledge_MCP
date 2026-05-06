@@ -59,7 +59,7 @@ mcp/
 
 ```toml
 [mcp]
-server_name = "pangenmcp"
+server_name = "opc_knowledge_mcp"
 version = "0.1.0"
 
 [defaults]

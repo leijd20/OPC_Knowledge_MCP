@@ -1,6 +1,6 @@
 # 测试最佳实践
 
-> pangenmcp 项目的测试策略和规范
+> OPC_Knowledge_MCP 项目的测试策略和规范
 
 ## 测试金字塔
 
@@ -230,7 +230,7 @@ jobs:
   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
   run: |
     # 启动 LightRAG（Docker）
-    # 启动 pangenmcp
+    # 启动 opc_knowledge_mcp
     # 运行 scripts/test_all.sh
 ```
 
