@@ -1,6 +1,7 @@
 //! Token 管理 API
 //!
 //! - GET /api/tokens - 列出 token（需要 token:read）
+//! - GET /api/tokens/:name/reveal - 显示完整 token（需要 token:read）
 //! - POST /api/tokens - 创建 token（需要 token:write）
 //! - DELETE /api/tokens/:name - 删除 token（需要 token:write）
 
@@ -44,6 +45,13 @@ pub struct CreateTokenResponse {
     pub token: String,
     pub name: String,
     pub scopes: Vec<String>,
+}
+
+/// 显示完整 token 响应
+#[derive(Debug, Serialize)]
+pub struct RevealTokenResponse {
+    pub token: String,
+    pub name: String,
 }
 
 pub async fn list_tokens(
@@ -112,6 +120,42 @@ pub async fn create_token(
         token,
         name: req.name,
         scopes: req.scopes,
+    }))
+}
+
+pub async fn reveal_token(
+    State(state): State<Arc<AppState>>,
+    Extension(user): Extension<UserContext>,
+    Path(name): Path<String>,
+) -> Result<Json<RevealTokenResponse>, (StatusCode, String)> {
+    // 检查权限
+    if !user.scopes.iter().any(|s| s == "token:read") {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Missing token:read scope".to_string(),
+        ));
+    }
+
+    // 查找 token
+    let config = state.shared.config.read().await;
+    let token_config = config
+        .auth
+        .tokens
+        .iter()
+        .find(|t| t.name == name)
+        .ok_or_else(|| (StatusCode::NOT_FOUND, format!("Token '{}' not found", name)))?;
+
+    // 记录审计日志（安全考虑）
+    state.shared.audit_logger.log(
+        &user.name,
+        "token_reveal",
+        &format!("name={}", name),
+        "success",
+    );
+
+    Ok(Json(RevealTokenResponse {
+        token: token_config.token.clone(),
+        name: token_config.name.clone(),
     }))
 }
 

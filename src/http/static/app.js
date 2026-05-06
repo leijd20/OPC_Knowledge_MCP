@@ -1,7 +1,15 @@
-// PangenMCP Admin UI - Alpine.js Version
+// OPC_Knowledge_MCP Admin UI - Alpine.js Version
 
 // API Configuration
 const API_BASE = '/api';
+
+// Valid scopes for token creation
+const VALID_SCOPES = [
+    'rag:read', 'rag:write', 'rag:admin',
+    'token:read', 'token:write',
+    'config:read', 'config:write',
+    'stats:read', 'audit:read'
+];
 
 // Check authentication on page load
 document.addEventListener('alpine:init', () => {
@@ -238,9 +246,11 @@ document.addEventListener('alpine:init', () => {
         refreshing: false,
         creating: false,
         newToken: null,
+        revealedTokens: new Set(), // 跟踪哪些 token 已显示
+        validScopes: VALID_SCOPES,
         form: {
             name: '',
-            scopes: ''
+            scopes: []  // 改为数组
         },
 
         init() {
@@ -273,7 +283,7 @@ document.addEventListener('alpine:init', () => {
 
         openCreateModal() {
             this.form.name = '';
-            this.form.scopes = '';
+            this.form.scopes = [];  // 重置为空数组
             this.newToken = null;
             this.creating = true;
         },
@@ -283,14 +293,23 @@ document.addEventListener('alpine:init', () => {
             this.newToken = null;
         },
 
+        toggleScope(scope) {
+            const index = this.form.scopes.indexOf(scope);
+            if (index > -1) {
+                this.form.scopes.splice(index, 1);
+            } else {
+                this.form.scopes.push(scope);
+            }
+        },
+
         async createToken() {
             try {
-                const scopes = this.form.scopes.split(',').map(s => s.trim());
+                // scopes 已经是数组，不需要 split
                 const data = await apiCall('/tokens', {
                     method: 'POST',
                     body: JSON.stringify({
                         name: this.form.name,
-                        scopes
+                        scopes: this.form.scopes
                     })
                 });
                 if (data) {
@@ -311,6 +330,29 @@ document.addEventListener('alpine:init', () => {
                 Alpine.store('toast').success('Token deleted successfully');
             } catch (err) {
                 Alpine.store('toast').error('Failed to delete token: ' + err.message);
+            }
+        },
+
+        async revealToken(name) {
+            const token = this.tokens.find(t => t.name === name);
+            if (!token) return;
+
+            if (token.revealed) {
+                // 隐藏：重新加载以获取遮蔽版本
+                token.revealed = false;
+                this.revealedTokens.delete(name);
+                await this.loadTokens();
+            } else {
+                // 显示：获取完整 token
+                try {
+                    const data = await apiCall(`/tokens/${name}/reveal`);
+                    token.token_preview = data.token;
+                    token.revealed = true;
+                    this.revealedTokens.add(name);
+                    Alpine.store('toast').success('Full token revealed');
+                } catch (err) {
+                    Alpine.store('toast').error('Failed to reveal token: ' + err.message);
+                }
             }
         },
 

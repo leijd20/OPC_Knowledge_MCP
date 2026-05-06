@@ -36,6 +36,7 @@ pub fn router(app_state: Arc<AppState>) -> Router<Arc<AppState>> {
             get(tokens::list_tokens).post(tokens::create_token),
         )
         .route("/tokens/:name", delete(tokens::delete_token))
+        .route("/tokens/:name/reveal", get(tokens::reveal_token))
         .route("/audit/logs", get(audit::get_audit_logs))
         .route_layer(axum_middleware::from_fn_with_state(
             app_state,
